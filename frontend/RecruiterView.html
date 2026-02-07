@@ -1,26 +1,26 @@
 <html>
 	<head>
 		<link rel="stylesheet" type="text/css" href="interface.css" />
-		<script type="text/javascript" src=""> </script>
+		<script type="text/javascript" src="script.js"> </script>
 		<meta charset="UTF-8">
 		<meta name="description" content="Find your match!">
 		<title> GitHunter </title>
-		<link rel="shortcut icon" type="image/png" href=""/>
+		<link rel="shortcut icon" type="image/png" href="res/logo.png"/>
         <link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
 	</head>
 	<body>
 		<div id="header">
-			<img src="../res/logo.png" alt=" ">
+			<img id="logo" src="res/logo.png" alt="Logo">
 			<span>GitHunter</span>
 		</div>
 		<div id="center">
 			<h1>Find your match</h1>
-			<form id="name-form" action="/submit" method="post">
-				<label for="username">Search Username:</label>
-  				<input type="text" name="username" placeholder="Enter a username..." required>
-  				<button type="submit">Submit</button>
+			<form id="name-form">
+  				<input type="text" id="username" name="username" placeholder="Enter a username..." required>
+  				<button type="button" onclick="sendToBackend(event)">Submit</button>
 			</form>
         </div>
 	</body>

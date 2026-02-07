@@ -21,7 +21,7 @@ app.get("/api/user/:username", async (req, res) => {
     
     // console.log(repoData); 
     //user repo data
-
+    res.json({ user: userData, repos: repoData });
   } catch (err) {
     res.status(404).json({ error: "User not found" });
   }
