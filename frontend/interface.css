@@ -5,8 +5,16 @@ body {
 }
 
 h1 {
-    font-size: 64px;
+    font-size: clamp(84px, 6vw, 120px);
     font-weight: 200;
+    margin-bottom: 0px;
+    margin-top: 40px;
+}
+
+h2 {
+    font-weight: 300;
+    font-size: clamp(16px, calc(4vw / 3), 24px);
+    margin-bottom: 20px;
 }
 
 #logo {
@@ -40,9 +48,13 @@ h1 {
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 60px;
+    margin: 0px;
 }
 
 #name-form input {
+    margin-right: 10px;
+    height: 42px;
     width: 300px;
     padding: 12px 20px;
     font-size: 16px;
@@ -62,4 +74,51 @@ h1 {
     border-radius: 10px;
     cursor: pointer;
     box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transition: background 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
+#name-form button:hover {
+    color: #6a11cb;
+    background: linear-gradient(45deg, #8b4df2, #5fa0ff);
+    box-shadow: 0 0 10px rgba(106,17,203,0.5), 0 0 20px rgba(37,117,252,0.5);
+    transition: 0.3s;
+}
+
+#center-form {
+    background-color: #2e2e2e;
+    border: 2px solid #555;
+    border-radius: 15px;
+    padding: 20px 30px;
+    max-width: 400px;
+    margin: 20px auto;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+#stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 92%;
+    box-sizing: border-box;
+    padding: 10px;
+    gap: 10px;
+}
+#stats > div {
+    height: 400px;
+    box-sizing: border-box;
+    background-color: #2e2e2e;
+    border: 2px solid #555;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 1200px) {
+    #stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 800px) {
+    #stats {
+        grid-template-columns: 1fr;
+    }
 }
