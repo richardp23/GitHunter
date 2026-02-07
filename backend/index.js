@@ -1,7 +1,17 @@
-const express = require("express"); //create express server
-const axios = require("axios"); //api calling
-const cors = require("cors"); //cross-origin resource sharing
-const app = express(); //app creation
+require("dotenv").config();
+
+const express = require("express");
+const axios = require("axios");
+const cors = require("cors");
+
+const app = express();
+
+// GitHub API client with auth (5000 req/hr when authenticated vs 60 unauthenticated)
+const githubApi = axios.create({
+  headers: process.env.GITHUB_TOKEN
+    ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+    : {},
+});
 
 app.use(cors({
   origin: "*",
@@ -16,12 +26,12 @@ app.get("/api/user/:username", async (req, res) => {
   console.log(`Request received for user: ${username}`);
 
   try {
-    //get user 
-    const userReponse = await axios.get(`https://api.github.com/users/${username}`);
+    // get user
+    const userReponse = await githubApi.get(`https://api.github.com/users/${username}`);
     const userData = userReponse.data;
 
-    //get repo data from user 
-    const repoResponse = await axios.get(userData.repos_url);
+    // get repo data from user
+    const repoResponse = await githubApi.get(userData.repos_url);
     const repoData = repoResponse.data;
 
     //create an object that holds the programming lanugages and how many repos are in that langauge
@@ -66,7 +76,7 @@ app.get("/api/user/:username", async (req, res) => {
     try {
         let totalCommits = 0;
         for (const repo of repoData) {
-            const commits = await axios.get(`https://api.github.com/repos/${username}/${repo.name}/commits`);
+            const commits = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/commits`);
             totalCommits += commits.data.length;
         }
     } catch (err) {
@@ -77,7 +87,7 @@ app.get("/api/user/:username", async (req, res) => {
     try {
         let totalCommitComments = 0;
         for (const repo of repoData) {
-            const commitComments = await axios.get(`https://api.github.com/repos/${username}/${repo.name}/comments` );
+            const commitComments = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/comments` );
             totalCommitComments += commitComments.data.length;
         }
     } catch (err) {
@@ -88,7 +98,7 @@ app.get("/api/user/:username", async (req, res) => {
     try {
         let totalPulls = 0;
         for (const repo of repoData) {
-            const pulls = await axios.get( `https://api.github.com/repos/${username}/${repo.name}/pulls?state=all`);
+            const pulls = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/pulls?state=all`);
             totalPulls += pulls.data.length;
         }
     } catch (err) {
