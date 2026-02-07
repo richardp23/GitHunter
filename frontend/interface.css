@@ -1,0 +1,23 @@
+body {
+    background-color: #3a3a3a;
+    font-family: "Roboto", sans-serif;
+    color: white
+}
+
+h1 {
+    font-size: 64px;
+    font-weight: 200;
+}
+
+#header {
+    position: fixed;
+    margin-top: 0px;
+    font-size: 40px;
+}
+
+#center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
