@@ -61,6 +61,44 @@ app.get("/api/user/:username", async (req, res) => {
         totalSize += repo.size;
     });
 
+    /* fix this!
+
+    try {
+        let totalCommits = 0;
+        for (const repo of repoData) {
+            const commits = await axios.get(`https://api.github.com/repos/${username}/${repo.name}/commits`);
+            totalCommits += commits.data.length;
+        }
+    } catch (err) {
+        res.status(404).json({ error: "Commits not found" });
+        totalCommits = totalCommits ?? 0;
+    }
+    
+    try {
+        let totalCommitComments = 0;
+        for (const repo of repoData) {
+            const commitComments = await axios.get(`https://api.github.com/repos/${username}/${repo.name}/comments` );
+            totalCommitComments += commitComments.data.length;
+        }
+    } catch (err) {
+        res.status(404).json({ error: "Commit comments not found" });
+        totalCommitComments = totalCommitComments ?? 0;
+    }
+
+    try {
+        let totalPulls = 0;
+        for (const repo of repoData) {
+            const pulls = await axios.get( `https://api.github.com/repos/${username}/${repo.name}/pulls?state=all`);
+            totalPulls += pulls.data.length;
+        }
+    } catch (err) {
+        res.status(404).json({ error: "Pulls not found" });
+        totalPulls = totalPulls ?? 0;
+    }
+    
+    */
+
+    //commit history, commits, commit comments, repo content, pull requests
 
     //Creates a user report that holds all the personal information about the user
     const userReport = {
@@ -73,7 +111,12 @@ app.get("/api/user/:username", async (req, res) => {
             user_forked_projects: forked_projects, 
             repo_size: totalSize, 
             watchers: totalWatchers, 
-            stars: totalStars
+            stars: totalStars,
+            /*
+            commits: totalCommits ?? 0, 
+            pulls: totalPulls ?? 0, 
+            commit_comments: totalCommitComments ?? 0
+            */
         }
     };
 

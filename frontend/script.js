@@ -6,4 +6,6 @@ async function sendToBackend(event) {
     const data = await res.json(); 
 
     console.log(data);
+    const languages = data.report.stats.language;
+    console.log(languages);
 }
