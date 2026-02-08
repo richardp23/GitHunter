@@ -1,142 +1,116 @@
 require("dotenv").config();
 
 const express = require("express");
-const axios = require("axios");
 const cors = require("cors");
+const { buildReport } = require("./services/githubService");
+const { analysisQueue } = require("./queue");
+const { getReport } = require("./utils/cache");
 
 const app = express();
 
-// GitHub API client with auth (5000 req/hr when authenticated vs 60 unauthenticated)
-const githubApi = axios.create({
-  headers: process.env.GITHUB_TOKEN
-    ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-    : {},
-});
-
+app.use(express.json());
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
   credentials: true
 }));
 
-app.listen(5000, () => { console.log("Server running on port 5000"); });
- 
+if (require.main === module) {
+  app.listen(5000, () => { console.log("Server running on port 5000"); });
+}
+
+module.exports = app;
+
+// --- Sync route (kept for backward compatibility) ---
 app.get("/api/user/:username", async (req, res) => {
   const username = req.params.username;
   console.log(`Request received for user: ${username}`);
 
   try {
-    // get user
-    const userReponse = await githubApi.get(`https://api.github.com/users/${username}`);
-    const userData = userReponse.data;
-
-    // get repo data from user
-    const repoResponse = await githubApi.get(userData.repos_url);
-    const repoData = repoResponse.data;
-
-    //create an object that holds the programming lanugages and how many repos are in that langauge
-    const languageCounts = {};
-    repoData.forEach(repo => {
-        if (repo.language) {
-            languageCounts[repo.language] = (languageCounts[repo.language] || 0) + 1;
-        }
-    });
-
-    //get fork count
-    let forkCount = 0;
-    repoData.forEach(repo => {
-        if(repo.fork) {
-             forkCount += 1
-        }
-    });
-
-    //get projects from this user that have been forked
-    let forked_projects = 0;
-    repoData.forEach(repo => {
-       forked_projects += repo.forks_count;
-    });
-
-    //get project descriptions
-    const project_descriptions = [];
-    repoData.forEach(repo => {
-        project_descriptions.push(repo.description);
-    });
-
-    let totalStars = 0;
-    let totalWatchers = 0;
-    let totalSize = 0;
-    repoData.forEach(repo => {
-        totalStars += repo.stargazers_count;
-        totalWatchers += repo.watchers_count;
-        totalSize += repo.size;
-    });
-
-    /* fix this!
-
-    try {
-        let totalCommits = 0;
-        for (const repo of repoData) {
-            const commits = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/commits`);
-            totalCommits += commits.data.length;
-        }
-    } catch (err) {
-        res.status(404).json({ error: "Commits not found" });
-        totalCommits = totalCommits ?? 0;
-    }
-    
-    try {
-        let totalCommitComments = 0;
-        for (const repo of repoData) {
-            const commitComments = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/comments` );
-            totalCommitComments += commitComments.data.length;
-        }
-    } catch (err) {
-        res.status(404).json({ error: "Commit comments not found" });
-        totalCommitComments = totalCommitComments ?? 0;
-    }
-
-    try {
-        let totalPulls = 0;
-        for (const repo of repoData) {
-            const pulls = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/pulls?state=all`);
-            totalPulls += pulls.data.length;
-        }
-    } catch (err) {
-        res.status(404).json({ error: "Pulls not found" });
-        totalPulls = totalPulls ?? 0;
-    }
-    
-    */
-
-    //commit history, commits, commit comments, repo content, pull requests
-
-    //Creates a user report that holds all the personal information about the user
-    const userReport = {
-        user: userData, 
-        repos: repoData, 
-        stats: {
-            language: languageCounts, 
-            project_type: project_descriptions, 
-            fork_count: forkCount, 
-            user_forked_projects: forked_projects, 
-            repo_size: totalSize, 
-            watchers: totalWatchers, 
-            stars: totalStars,
-            /*
-            commits: totalCommits ?? 0, 
-            pulls: totalPulls ?? 0, 
-            commit_comments: totalCommitComments ?? 0
-            */
-        }
-    };
-
-    //send all the data to the frontend
-    res.json({report: userReport});
-    
+    const result = await buildReport(username);
+    res.json(result);
   } catch (err) {
     console.error("Full Error Info:", err.response ? err.response.data : err.message);
     res.status(500).json({ error: err.message });
   }
-
 });
 
+// --- Async job queue routes ---
+
+app.post("/api/analyze", async (req, res) => {
+  const username = req.body?.username;
+  if (!username || typeof username !== "string") {
+    return res.status(400).json({ error: "username is required" });
+  }
+
+  try {
+    const job = await analysisQueue.add({ username }, { jobId: undefined });
+    res.json({ jobId: job.id.toString() });
+  } catch (err) {
+    console.error("Queue add failed:", err.message);
+    res.status(503).json({ error: "Service unavailable" });
+  }
+});
+
+app.get("/api/status/:jobId", async (req, res) => {
+  const { jobId } = req.params;
+  if (!jobId) return res.status(400).json({ error: "jobId is required" });
+
+  try {
+    const job = await analysisQueue.getJob(jobId);
+    if (!job) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+
+    const state = await job.getState();
+    const progress = job.progress();
+
+    if (state === "completed") {
+      const report = await getReport(jobId);
+      return res.json({
+        status: "complete",
+        progress: 100,
+        report: report ?? null
+      });
+    }
+
+    if (state === "failed") {
+      return res.json({
+        status: "failed",
+        progress: 0,
+        error: job.failedReason || "Analysis failed"
+      });
+    }
+
+    res.json({
+      status: state === "active" ? "processing" : "pending",
+      progress: typeof progress === "number" ? progress : 0
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Internal error" });
+  }
+});
+
+app.get("/api/report/:jobId", async (req, res) => {
+  const { jobId } = req.params;
+  if (!jobId) return res.status(400).json({ error: "jobId is required" });
+
+  try {
+    const report = await getReport(jobId);
+    if (!report) {
+      const job = await analysisQueue.getJob(jobId);
+      if (!job) return res.status(404).json({ error: "Job not found" });
+      const state = await job.getState();
+      if (state !== "completed") {
+        return res.status(202).json({
+          error: "Report not ready",
+          status: state === "active" ? "processing" : "pending"
+        });
+      }
+      return res.status(404).json({ error: "Report expired or not found" });
+    }
+    res.json(report);
+  } catch (err) {
+    res.status(500).json({ error: "Internal error" });
+  }
+});
