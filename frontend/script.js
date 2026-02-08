@@ -7,12 +7,56 @@ let lastReportUsername = null;
 const API_BASE = "http://localhost:5000";
 const POLL_INTERVAL_MS = 2000;
 
+/** IDs for the fake loading animation; cleared when analysis completes or fails. */
+let fakeProgressIntervalId = null;
+let fakeMessageIntervalId = null;
+
+const FAKE_LOADING_MESSAGES = [
+    "Asking the AI very nicely…",
+    "Counting semicolons…",
+    "Reading their README (they have one, right?)…",
+    "Checking if they use tabs or spaces…",
+    "Evaluating code quality. No pressure…",
+    "Consulting the senior engineer in the cloud…",
+    "Loading loading loading…",
+    "Teaching robots to judge code…",
+    "Scanning for TODO comments…",
+    "Measuring technical debt in units of regret…",
+    "Checking if 'it works on my machine'…",
+    "Running the code through the vibe checker…",
+    "Convincing the API we're not a bot…",
+    "Parsing feelings from commit messages…",
+    "Calculating how much coffee was involved…",
+    "Waiting for the 847th dependency to install…",
+];
+
 document.addEventListener("DOMContentLoaded", () => {
     const center = document.getElementById("center");
     setTimeout(() => center.classList.add("fade-in"), 100);
     const downloadBtn = document.getElementById("download-pdf-btn");
     if (downloadBtn) downloadBtn.addEventListener("click", downloadPdfReport);
 });
+
+function clearFakeLoadingIntervals() {
+    if (fakeProgressIntervalId != null) {
+        clearInterval(fakeProgressIntervalId);
+        fakeProgressIntervalId = null;
+    }
+    if (fakeMessageIntervalId != null) {
+        clearInterval(fakeMessageIntervalId);
+        fakeMessageIntervalId = null;
+    }
+}
+
+function updateAnalyzingUI(progress, text) {
+    const progressEl = document.getElementById("analyzing-progress");
+    const fillEl = document.getElementById("analyzing-bar-fill");
+    const textEl = document.getElementById("analyzing-text");
+    const pct = Math.min(100, Math.max(0, Math.round(progress)));
+    if (progressEl) progressEl.textContent = `${pct}%`;
+    if (fillEl) fillEl.style.width = `${pct}%`;
+    if (textEl && text) textEl.textContent = text;
+}
 
 function showAnalyzingState(show, progress = 0, text = "Running AI analysis…") {
     const el = document.getElementById("analyzing-status");
@@ -26,9 +70,54 @@ function showAnalyzingState(show, progress = 0, text = "Running AI analysis…")
         if (progressEl) progressEl.textContent = progress > 0 ? `${progress}%` : "";
         if (fillEl) fillEl.style.width = `${Math.min(100, progress)}%`;
     } else {
+        clearFakeLoadingIntervals();
         el.classList.add("hidden");
         if (fillEl) fillEl.style.width = "0%";
     }
+}
+
+/**
+ * Start the fake progress bar and rotating funny messages. Call clearFakeLoadingIntervals (or showAnalyzingState(false)) to stop.
+ * @returns {{ setProgress: (n: number) => void, setMessage: (s: string) => void }}
+ */
+function startFakeLoadingBar() {
+    clearFakeLoadingIntervals();
+    let fakeProgress = 0;
+    const PROGRESS_CAP = 92;
+    const TICK_MS = 320;
+    const LOSE_CHANCE = 0.025;   // Rare: ~once every 12–15 sec so it feels intentional
+    const LOSE_AMOUNT_MIN = 18;
+    const LOSE_AMOUNT_MAX = 35; // Big drop when it happens — clearly a joke
+    const GAIN_MIN = 2;
+    const GAIN_MAX = 7;         // Substantial progress most of the time
+
+    fakeProgressIntervalId = setInterval(() => {
+        if (Math.random() < LOSE_CHANCE) {
+            fakeProgress = Math.max(0, fakeProgress - (LOSE_AMOUNT_MIN + Math.random() * (LOSE_AMOUNT_MAX - LOSE_AMOUNT_MIN)));
+        } else {
+            fakeProgress = Math.min(PROGRESS_CAP, fakeProgress + (GAIN_MIN + Math.random() * (GAIN_MAX - GAIN_MIN)));
+        }
+        updateAnalyzingUI(fakeProgress, null);
+    }, TICK_MS);
+
+    let msgIndex = 0;
+    updateAnalyzingUI(0, FAKE_LOADING_MESSAGES[0]);
+    fakeMessageIntervalId = setInterval(() => {
+        msgIndex = (msgIndex + 1) % FAKE_LOADING_MESSAGES.length;
+        const textEl = document.getElementById("analyzing-text");
+        if (textEl) textEl.textContent = FAKE_LOADING_MESSAGES[msgIndex];
+    }, 2600);
+
+    return {
+        setProgress(n) {
+            fakeProgress = n;
+            updateAnalyzingUI(n, null);
+        },
+        setMessage(s) {
+            const textEl = document.getElementById("analyzing-text");
+            if (textEl) textEl.textContent = s;
+        },
+    };
 }
 
 function pollStatus(jobId) {
@@ -317,7 +406,8 @@ async function sendToBackend(event) {
 
         usernameInput.value = "";
         submitButton.innerText = "Analyzing…";
-        showAnalyzingState(true, 0, `Running AI analysis for ${username}…`);
+        showAnalyzingState(true, 0, FAKE_LOADING_MESSAGES[0]);
+        startFakeLoadingBar();
 
         const poll = async () => {
             const status = await pollStatus(jobId);
@@ -326,10 +416,11 @@ async function sendToBackend(event) {
                 usernameInput.placeholder = "Could not get status. Try again.";
                 return;
             }
-            const progress = status.progress != null ? status.progress : (status.status === "processing" ? 50 : status.status === "completed" ? 100 : 0);
-            showAnalyzingState(true, progress, status.status === "completed" ? "Almost ready…" : `Running AI analysis for ${username}…`);
 
             if (status.status === "completed") {
+                clearFakeLoadingIntervals();
+                updateAnalyzingUI(100, "Done! Loading your report…");
+                await new Promise((r) => setTimeout(r, 1000));
                 const data = await fetchReport(jobId);
                 showAnalyzingState(false);
                 if (data) {
