@@ -117,4 +117,6 @@ async function sendToBackend(event) {
     repoDisplay.style.color = getColor(totalRepos);
     starDisplay.style.color = getColor(totalStars);
     forkDisplay.style.color = getColor(totalForks);
+
+    var test = "test"
 }
