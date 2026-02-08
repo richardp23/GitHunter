@@ -7,7 +7,10 @@ let firstSearch = true;
 /** Set when a report is rendered; used by the Download PDF button. */
 let lastReportUsername = null;
 
-const API_BASE = "http://localhost:5000";
+// Use same origin when frontend is served from this app (e.g. Railway); else localhost for local dev
+const API_BASE = typeof window !== "undefined"
+  ? (window.API_BASE != null ? window.API_BASE : (window.location.origin && window.location.origin.startsWith("http") ? window.location.origin : "http://localhost:5000"))
+  : "http://localhost:5000";
 const POLL_INTERVAL_MS = 2000;
 
 /** IDs for the fake loading animation; cleared when analysis completes or fails. */

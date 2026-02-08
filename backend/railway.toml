@@ -1,0 +1,9 @@
+# Railway config for GitHunter backend (root directory set to backend in service settings)
+# See DEPLOY_RAILWAY.md in repo root for full deployment steps.
+
+[build]
+# Nixpacks auto-detects Node from package.json; no custom build needed unless you add frontend copy step
+
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 30

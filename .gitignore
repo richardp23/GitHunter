@@ -23,6 +23,7 @@ Thumbs.db
 # Build
 dist/
 build/
+backend/public/
 *.log
 
 # Testing
