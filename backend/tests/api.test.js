@@ -1,11 +1,12 @@
 /**
- * API tests for GET /api/user/:username
+ * API tests for GET /api/user/:username (v1)
  * Two suites: REST fallback (cache miss) and Redis cache hit.
  * Uses mocked GitHub API and cache - no real network or Redis.
+ * Uses same entry point as server (index.js) for consistent env/load order.
  */
 const request = require("supertest");
 
-// Mock axios before app loads
+// Mock axios before entry point loads app
 const mockGet = jest.fn();
 jest.mock("axios", () => ({
   create: () => ({ get: (...args) => mockGet(...args) }),
@@ -14,12 +15,13 @@ jest.mock("axios", () => ({
 // Mock cache - return value configured per suite
 const mockGetReport = jest.fn();
 const mockSetReport = jest.fn();
-jest.mock("./utils/cache", () => ({
+jest.mock("../src/utils/cache", () => ({
   getReportByUsername: (...args) => mockGetReport(...args),
   setReportByUsername: (...args) => mockSetReport(...args),
+  init: () => Promise.resolve(false),
 }));
 
-const app = require("./index");
+const { app } = require("../index");
 
 const mockUser = {
   login: "torvalds",

@@ -1,21 +1,20 @@
 /**
- * Redis cache integration tests for GET /api/user/:username
- * Uses real Redis (no cache mock), mocked GitHub API.
- * Skips all tests if Redis is unavailable (e.g. not running locally).
+ * Redis cache integration tests for GET /api/user/:username (v1)
+ * Uses real Redis (no cache mock), mocked GitHub API. Uses same entry point as server.
+ * Skips all tests if Redis is unavailable or RUN_CACHE_TESTS not set.
  *
- * Run: npm run test:cache:integration
+ * Run: npm run test:cache:integration  (sets RUN_CACHE_TESTS=1)
  */
 const request = require("supertest");
 
-// Mock GitHub API so we don't hit real GitHub
 const mockGet = jest.fn();
 jest.mock("axios", () => ({
   create: () => ({ get: (...args) => mockGet(...args) }),
 }));
 
-// Do NOT mock cache - use real Redis
-const { close } = require("./utils/cache");
-const app = require("./index");
+const { app, bootstrap } = require("../index");
+const cache = require("../src/utils/cache");
+const { close, isRedisAvailable } = cache;
 
 const TEST_USERNAME = "cache-integration-test";
 const mockUser = {
@@ -27,9 +26,15 @@ const mockRepos = [
   { name: "repo1", fork: false, language: "JavaScript", owner: { login: TEST_USERNAME } },
 ];
 
-// Skip decision must happen at load time; beforeAll runs too late.
-// Run with RUN_CACHE_TESTS=1 when Redis is up: RUN_CACHE_TESTS=1 npm run test:cache:integration
-const redisAvailable = process.env.RUN_CACHE_TESTS === "1";
+const redisRequested = process.env.RUN_CACHE_TESTS === "1";
+let redisAvailable = false;
+
+beforeAll(async () => {
+  if (redisRequested) {
+    await bootstrap();
+    redisAvailable = isRedisAvailable();
+  }
+});
 
 beforeEach(() => {
   mockGet.mockImplementation((url) => {
@@ -46,21 +51,23 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-  await close();
+  await cache.close();
 });
 
-const describeRedis = redisAvailable ? describe : describe.skip;
-describeRedis("GET /api/user/:username - Redis cache (integration)", () => {
-  it("cache miss: fetches from GitHub, then cache hit returns same report without GitHub call", async () => {
-    // Clear cache for test user
+describe("GET /api/user/:username - Redis cache (integration)", () => {
+  it("cache miss: fetches from GitHub, then cache hit returns same report without GitHub call", async function () {
+    if (!redisRequested || !redisAvailable) {
+      console.warn("Skipped: set RUN_CACHE_TESTS=1 and ensure Redis is running (REDIS_URL in .env).");
+      return this.skip();
+    }
     const Redis = require("ioredis");
-    const client = new Redis(process.env.REDIS_URL || "redis://localhost:6379");
+    const { REDIS_URL } = require("../src/config/env");
+    const client = new Redis(REDIS_URL || "redis://localhost:6379");
     await client.del(`report:user:${TEST_USERNAME}`);
     await client.quit();
 
     mockGet.mockClear();
 
-    // First request: cache miss -> fetches from GitHub
     const res1 = await request(app).get(`/api/user/${TEST_USERNAME}`);
     expect(res1.status).toBe(200);
     expect(res1.body.report.user.login).toBe(TEST_USERNAME);
@@ -69,7 +76,6 @@ describeRedis("GET /api/user/:username - Redis cache (integration)", () => {
 
     mockGet.mockClear();
 
-    // Second request: cache hit -> no GitHub call
     const res2 = await request(app).get(`/api/user/${TEST_USERNAME}`);
     expect(res2.status).toBe(200);
     expect(res2.body.report.user.login).toBe(TEST_USERNAME);

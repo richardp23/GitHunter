@@ -5,9 +5,11 @@
   "scripts": {
     "start": "node index.js",
     "test": "jest --forceExit",
-    "test:unit": "jest api.test.js --forceExit",
-    "test:integration": "jest api.integration.test.js --forceExit",
-    "test:cache:integration": "node scripts/run-cache-tests.js"  },
+    "test:unit": "jest tests/api.test.js --forceExit",
+    "test:integration": "jest tests/api.integration.test.js --forceExit",
+    "test:cache:integration": "cross-env RUN_CACHE_TESTS=1 jest tests/api.cache.integration.test.js --forceExit",
+    "test:v2": "jest tests/v2 --forceExit"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -21,6 +23,7 @@
     "ioredis": "^5.6.1"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "jest": "^29.7.0",
     "supertest": "^7.0.0"
   }

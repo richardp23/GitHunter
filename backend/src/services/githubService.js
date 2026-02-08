@@ -1,10 +1,4 @@
-const axios = require("axios");
-
-const githubApi = axios.create({
-  headers: process.env.GITHUB_TOKEN
-    ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
-    : {},
-});
+const githubApi = require("./githubApi");
 
 async function buildReport(username) {
   const userResponse = await githubApi.get(`https://api.github.com/users/${username}`);

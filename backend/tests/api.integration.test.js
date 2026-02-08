@@ -1,17 +1,22 @@
 /**
- * Integration tests for GET /api/user/:username
- * Hits the real GitHub API - requires network. Rate limits apply.
- * Update USERNAMES if usernames change or use different casing.
+ * Integration tests for GET /api/user/:username (v1)
+ * Hits the real GitHub API - requires network.
+ * Uses entry point so .env (GITHUB_TOKEN) is loaded; bootstrap() runs before suite.
+ * Without GITHUB_TOKEN, rate limit often causes 500s.
  */
 const request = require("supertest");
 
-// Mock cache so index loads without Redis - cache miss, fallback to REST
-jest.mock("./utils/cache", () => ({
+jest.mock("../src/utils/cache", () => ({
   getReportByUsername: () => null,
   setReportByUsername: () => {},
+  init: () => Promise.resolve(false),
 }));
 
-const app = require("./index");
+const { app, bootstrap } = require("../index");
+
+beforeAll(async () => {
+  await bootstrap();
+});
 
 const USERNAMES = ["torvalds", "richardp23", "JustinCracchiolo", "faizancodes"];
 
