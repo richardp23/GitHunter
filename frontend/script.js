@@ -603,22 +603,26 @@ async function createSlidesPresentation() {
 async function sendToBackend(event) {
     event.preventDefault();
     const usernameInput = document.getElementById("username");
+    const jobDescriptionInput = document.getElementById("job-description");
     const submitButton = event.target.querySelector("button") || document.querySelector("#name-form button");
     const username = (usernameInput.value || "").trim();
     if (!username) return;
 
     usernameInput.disabled = true;
+    jobDescriptionInput.disabled = true;
     submitButton.disabled = true;
     submitButton.innerText = "Searching...";
     showAnalyzingState(false);
 
     try {
         usernameInput.value = "";
+        jobDescriptionInput.value = "";
         // Use cached full report (including AI) when available, so we don't overwrite Redis with a new job
         const latestRes = await fetch(`${API_BASE}/api/report/latest/${encodeURIComponent(username)}`);
         if (latestRes.ok) {
             const data = await latestRes.json();
             renderReport(data);
+            jobDescriptionInput.disabled = false;
             usernameInput.disabled = false;
             submitButton.disabled = false;
             submitButton.innerText = "Search";
@@ -628,12 +632,14 @@ async function sendToBackend(event) {
         const gitHubCheck = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`);
         if (gitHubCheck.status === 404) {
             // User definitely does not exist
+            jobDescriptionInput.value = "";
             usernameInput.value = "";
             usernameInput.placeholder = "GitHub user not found!";
             usernameInput.classList.add("error-shake");
             
             // Reset UI immediately
             usernameInput.disabled = false;
+            jobDescriptionInput.disabled = false;
             submitButton.disabled = false;
             submitButton.innerText = "Search";
 
@@ -653,10 +659,12 @@ async function sendToBackend(event) {
         const body = await res.json().catch(() => ({}));
         if (!res.ok) {
             usernameInput.value = "";
+            jobDescriptionInput.value = "";
             usernameInput.placeholder = body.error || "Request failed. Try again.";
             usernameInput.classList.add("error-shake");
 
             usernameInput.disabled = false;
+            jobDescriptionInput.disabled = false;
             submitButton.disabled = false;
             submitButton.innerText = "Search";
 
@@ -671,12 +679,14 @@ async function sendToBackend(event) {
         if (!jobId) {
             usernameInput.placeholder = "No job ID returned. Try again.";
             usernameInput.disabled = false;
+            jobDescriptionInput.disabled = true;
             submitButton.disabled = false;
             submitButton.innerText = "Search";
             return;
         }
 
         usernameInput.value = "";
+        jobDescriptionInput.value = "";
         submitButton.innerText = "Analyzing…";
         showAnalyzingState(true, 0, FAKE_LOADING_MESSAGES[0]);
         startFakeLoadingBar();
@@ -686,6 +696,7 @@ async function sendToBackend(event) {
             if (!status) {
                 showAnalyzingState(false);
                 usernameInput.placeholder = "Could not get status. Try again.";
+                jobDescriptionInput.disabled = false;
                 usernameInput.disabled = false;
                 submitButton.disabled = false;
                 submitButton.innerText = "Search";
@@ -704,6 +715,7 @@ async function sendToBackend(event) {
                     usernameInput.placeholder = "Report not found. Try again.";
                 }
 
+                jobDescriptionInput.disabled = false;
                 usernameInput.disabled = false;
                 submitButton.disabled = false;
                 submitButton.innerText = "Search";
@@ -712,6 +724,7 @@ async function sendToBackend(event) {
             if (status.status === "failed") {
                 showAnalyzingState(false);
                 usernameInput.placeholder = "Analysis failed. Try again.";
+                jobDescriptionInput.disabled = false;
                 usernameInput.disabled = false;
                 submitButton.disabled = false;
                 submitButton.innerText = "Search";
@@ -724,6 +737,7 @@ async function sendToBackend(event) {
         console.error(err);
         showAnalyzingState(false);
         usernameInput.placeholder = "Network error. Try again.";
+        jobDescriptionInput.disabled = false;
         usernameInput.disabled = false;
         submitButton.disabled = false;
         submitButton.innerText = "Search";
