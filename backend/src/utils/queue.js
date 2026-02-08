@@ -1,11 +1,19 @@
 const Queue = require("bull");
-const { REDIS_URL } = require("../config/env");
+const { REDIS_URL, SLIDES_CLEANUP_DELAY_MS } = require("../config/env");
 const { setReportByJobId, setReportByUsername, setJobStatus } = require("./cache");
 const { runAnalysis } = require("../services/analysisService");
+const { deletePresentation } = require("../services/slidesService");
 
 const analysisQueue = new Queue("analysis", REDIS_URL, {
   defaultJobOptions: {
     removeOnComplete: 100,
+    attempts: 1,
+  },
+});
+
+const cleanupQueue = new Queue("slides-cleanup", REDIS_URL, {
+  defaultJobOptions: {
+    removeOnComplete: 200,
     attempts: 1,
   },
 });
@@ -34,4 +42,9 @@ analysisQueue.on("failed", (job, err) => {
   console.error(`Job ${jobId} failed:`, err?.message || err);
 });
 
-module.exports = { analysisQueue };
+cleanupQueue.process(async (job) => {
+  const { presentationId } = job.data || {};
+  if (presentationId) await deletePresentation(presentationId);
+});
+
+module.exports = { analysisQueue, cleanupQueue };

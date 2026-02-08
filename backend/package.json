@@ -8,7 +8,8 @@
     "test:unit": "jest tests/v1/api.test.js --forceExit",
     "test:integration": "jest tests/v1/api.integration.test.js --forceExit",
     "test:cache:integration": "cross-env RUN_CACHE_TESTS=1 jest tests/v1/api.cache.integration.test.js --forceExit",
-    "test:v2": "jest tests/v2 --forceExit"
+    "test:v2": "jest tests/v2 --forceExit",
+    "test:slides-api": "cross-env NODE_OPTIONS=--experimental-vm-modules jest tests/v2/slides-api.integration.test.js --forceExit"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.2.4",
     "express": "^5.2.1",
+    "googleapis": "^171.4.0",
     "ioredis": "^5.9.2",
     "pdfkit": "^0.17.2"
   },

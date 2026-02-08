@@ -18,18 +18,20 @@ isProject: false
 The web app must:
 
 
-| Requirement                                    | Status                        |
-| ---------------------------------------------- | ----------------------------- |
-| Accept a GitHub username                       | Done                          |
-| Analyze repositories                           | Partial (metadata only today) |
-| Understand project intent and architecture     | Not implemented               |
-| Review code like a senior engineer             | Not implemented               |
-| Produce a structured hiring-grade report with: |                               |
-| — Scores                                       | Not implemented               |
-| — Strengths & weaknesses                       | Not implemented               |
-| — Technical highlights                         | Not implemented               |
-| — Improvement suggestions                      | Not implemented               |
-| — Hiring recommendation                        | Not implemented               |
+| Requirement                                    | Status    |
+| ---------------------------------------------- | --------- |
+| Accept a GitHub username                       | Done      |
+| Analyze repositories                           | Done      |
+| Understand project intent and architecture     | Done (AI) |
+| Review code like a senior engineer             | Done (AI) |
+| Produce a structured hiring-grade report with: | Done      |
+| — Scores                                       | Done      |
+| — Strengths & weaknesses                       | Done      |
+| — Technical highlights                         | Done      |
+| — Improvement suggestions                      | Done      |
+| — Hiring recommendation                        | Done      |
+| — Score breakdown (why this score)             | Done      |
+| PDF export                                     | Done      |
 
 
 ---
@@ -148,9 +150,11 @@ flowchart TB
 - Loading state with progress
 - Report UI: scores, strengths, weaknesses, highlights, suggestions, recommendation
 
-### Phase 1E: PDF Export (If Time)
+### Phase 1E: PDF Export (If Time) — **Done**
 
-- `GET /api/download/:jobId` → PDF stream (jsPDF or server-side)
+- `GET /api/download/:jobId` → PDF stream (server-side via pdfkit)
+- `GET /api/download/latest/:username` → PDF for cached report
+- Frontend: "Download PDF report" button; backend generates full report PDF
 
 ### Phase 2: Clone Source (Post-Hackathon / Premium)
 
