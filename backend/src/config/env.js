@@ -14,6 +14,10 @@ const GOOGLE_APPLICATION_CREDENTIALS =
 const GOOGLE_SERVICE_ACCOUNT_JSON = process.env.GOOGLE_SERVICE_ACCOUNT_JSON || "";
 /** Optional Google Slides template file ID (Drive). If set, clone template then fill; otherwise create blank. */
 const SLIDES_TEMPLATE_ID = (process.env.SLIDES_TEMPLATE_ID || "").trim();
+/** Optional Drive folder or Shared Drive ID. When using impersonation (SLIDES_IMPERSONATE_EMAIL), files use that user's quota; folder is optional. */
+const SLIDES_DRIVE_FOLDER_ID = (process.env.SLIDES_DRIVE_FOLDER_ID || "").trim();
+/** Optional Google Workspace user email for domain-wide delegation. When set, the service account acts as this user and files use their Drive quota. Requires Workspace admin to grant the SA's Client ID the Drive/Slides scopes. */
+const SLIDES_IMPERSONATE_EMAIL = (process.env.SLIDES_IMPERSONATE_EMAIL || "").trim();
 /** Delay in ms before deleting our copy of the generated deck (user gets copy link). Default 5 min. */
 const SLIDES_CLEANUP_DELAY_MS = parseInt(process.env.SLIDES_CLEANUP_DELAY_MS || "300000", 10);
 
@@ -26,5 +30,7 @@ module.exports = {
   GOOGLE_APPLICATION_CREDENTIALS,
   GOOGLE_SERVICE_ACCOUNT_JSON,
   SLIDES_TEMPLATE_ID,
+  SLIDES_DRIVE_FOLDER_ID,
+  SLIDES_IMPERSONATE_EMAIL,
   SLIDES_CLEANUP_DELAY_MS,
 };

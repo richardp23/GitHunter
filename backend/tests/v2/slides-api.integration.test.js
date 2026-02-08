@@ -79,10 +79,12 @@ describe("Google Slides API access (integration)", () => {
     } catch (err) {
       const code = err.code ?? err.response?.status;
       const message = err.message || err.cause?.message || "";
+      const body = err.response?.data;
       if (code === 403 || /permission|PERMISSION_DENIED/i.test(message)) {
         const hint = permissionDeniedHint("Google Slides API", info);
+        const bodyJson = body ? `\nGoogle API error body: ${JSON.stringify(body)}` : "";
         throw new Error(
-          `Slides API returned 403 (caller does not have permission). ${hint} In GCP Console: APIs & Services → Library → search "Google Slides API" → Enable.`
+          `Slides API returned 403 (caller does not have permission). ${hint} In GCP Console: APIs & Services → Library → search "Google Slides API" → Enable.${bodyJson}`
         );
       }
       throw err;

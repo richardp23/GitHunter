@@ -8,7 +8,11 @@ const {
   GOOGLE_APPLICATION_CREDENTIALS,
   GOOGLE_SERVICE_ACCOUNT_JSON,
   SLIDES_TEMPLATE_ID,
+  SLIDES_DRIVE_FOLDER_ID,
+  SLIDES_IMPERSONATE_EMAIL,
 } = require("../config/env");
+const path = require("path");
+const fs = require("fs");
 const aiService = require("./aiService");
 
 const GEMINI_MODEL = "gemini-3-flash-preview";
@@ -124,15 +128,64 @@ async function generateSlideContent(fullReport) {
   return { title, slides };
 }
 
+const SLIDES_AUTH_SCOPES = [
+  "https://www.googleapis.com/auth/presentations",
+  "https://www.googleapis.com/auth/drive.file",
+  "https://www.googleapis.com/auth/drive",
+];
+
+/**
+ * Load service account credentials (from env JSON or key file).
+ * @returns {{ client_email: string, private_key: string }}
+ */
+function getServiceAccountCredentials() {
+  if (GOOGLE_SERVICE_ACCOUNT_JSON) {
+    try {
+      return JSON.parse(GOOGLE_SERVICE_ACCOUNT_JSON);
+    } catch (e) {
+      throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is invalid JSON.");
+    }
+  }
+  const keyPath = GOOGLE_APPLICATION_CREDENTIALS
+    ? (path.isAbsolute(GOOGLE_APPLICATION_CREDENTIALS)
+        ? GOOGLE_APPLICATION_CREDENTIALS
+        : path.resolve(process.cwd(), GOOGLE_APPLICATION_CREDENTIALS))
+    : null;
+  if (!keyPath || !fs.existsSync(keyPath)) {
+    throw new Error("GOOGLE_APPLICATION_CREDENTIALS (or GOOGLE_SERVICE_ACCOUNT_KEY) must point to a service account JSON file.");
+  }
+  const content = fs.readFileSync(keyPath, "utf8");
+  return JSON.parse(content);
+}
+
 /**
  * Get Google Auth client for Slides API (service account).
+ * If SLIDES_IMPERSONATE_EMAIL is set, uses domain-wide delegation so files use that user's Drive quota.
  */
 function getSlidesAuth() {
-  const { GoogleAuth } = require("google-auth-library");
+  const { GoogleAuth, JWT } = require("google-auth-library");
+  const subject = (SLIDES_IMPERSONATE_EMAIL || "").trim();
+
+  if (subject) {
+    const credentials = getServiceAccountCredentials();
+    const jwt = new JWT({
+      email: credentials.client_email,
+      key: credentials.private_key,
+      scopes: SLIDES_AUTH_SCOPES,
+      subject,
+    });
+    return {
+      getClient: async () => {
+        await jwt.authorize();
+        return jwt;
+      },
+    };
+  }
+
   if (GOOGLE_SERVICE_ACCOUNT_JSON) {
     try {
       const credentials = JSON.parse(GOOGLE_SERVICE_ACCOUNT_JSON);
-      return new GoogleAuth({ credentials });
+      return new GoogleAuth({ credentials, scopes: SLIDES_AUTH_SCOPES });
     } catch (e) {
       throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON is invalid JSON.");
     }
@@ -140,31 +193,52 @@ function getSlidesAuth() {
   if (GOOGLE_APPLICATION_CREDENTIALS) {
     process.env.GOOGLE_APPLICATION_CREDENTIALS = GOOGLE_APPLICATION_CREDENTIALS;
   }
-  return new GoogleAuth({
-    scopes: [
-      "https://www.googleapis.com/auth/presentations",
-      "https://www.googleapis.com/auth/drive.file",
-      "https://www.googleapis.com/auth/drive",
-    ],
-  });
+  return new GoogleAuth({ scopes: SLIDES_AUTH_SCOPES });
 }
 
 /**
- * Copy a Drive file (template) to a new file. Returns the new file ID (Slides file ID = presentation ID).
+ * Copy a Drive file (template) to a new file. Optionally into parentFolderId (avoids service account quota).
  * @param {string} templateId - Drive file ID of the template presentation
  * @param {string} title - Title for the copy
+ * @param {string} [parentFolderId] - Optional folder ID to place the copy in (use SLIDES_DRIVE_FOLDER_ID)
  * @returns {Promise<string>} presentationId (same as Drive file ID)
  */
-async function copyTemplate(templateId, title) {
+async function copyTemplate(templateId, title, parentFolderId) {
   const auth = getSlidesAuth();
   const { google } = require("googleapis");
   const drive = google.drive({ version: "v3", auth });
+  const requestBody = { name: title || "Candidate presentation" };
+  if (parentFolderId) requestBody.parents = [parentFolderId];
   const res = await drive.files.copy({
     fileId: templateId,
-    requestBody: { name: title || "Candidate presentation" },
+    requestBody,
+    supportsAllDrives: true,
   });
   const id = res.data?.id;
   if (!id) throw new Error("Drive copy did not return a file ID.");
+  return id;
+}
+
+/**
+ * Create a blank presentation via Drive API in the given folder. Use when service account's own Drive has no quota.
+ * @param {string} title - Presentation title
+ * @param {string} parentFolderId - Drive folder or Shared Drive ID (shared with service account)
+ * @returns {Promise<string>} presentationId
+ */
+async function createPresentationInFolder(title, parentFolderId) {
+  const auth = getSlidesAuth();
+  const { google } = require("googleapis");
+  const drive = google.drive({ version: "v3", auth });
+  const res = await drive.files.create({
+    requestBody: {
+      name: title || "Candidate presentation",
+      mimeType: "application/vnd.google-apps.presentation",
+      parents: parentFolderId ? [parentFolderId] : undefined,
+    },
+    supportsAllDrives: true,
+  });
+  const id = res.data?.id;
+  if (!id) throw new Error("Drive create did not return a file ID.");
   return id;
 }
 
@@ -213,9 +287,13 @@ async function createPresentationFromContent(content) {
 
   const title = content.title || "Candidate Overview";
   let presentationId;
+  const parentFolderId = SLIDES_DRIVE_FOLDER_ID || null;
 
   if (SLIDES_TEMPLATE_ID) {
-    presentationId = await copyTemplate(SLIDES_TEMPLATE_ID, title);
+    presentationId = await copyTemplate(SLIDES_TEMPLATE_ID, title, parentFolderId);
+  } else if (parentFolderId) {
+    // Create in shared folder to avoid service account Drive quota exceeded
+    presentationId = await createPresentationInFolder(title, parentFolderId);
   } else {
     const createRes = await slidesApi.presentations.create({
       requestBody: { title },
