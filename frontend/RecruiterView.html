@@ -40,74 +40,77 @@
 				</div>
 			</div>
 			<div id="stats">
-				<div class="stats-box stats-box-fullrow" id="stats-box-1">
+				<div class="stats-box" id="stats-box-1">
 					<span class="box-header">Top Language: <b><span id="language-header"></span></b></span>
-					<div class="stats-row-inner">
-						<div class="stats-row-left">
-							<div id="chart-wrapper">
-								<canvas id="language-chart"></canvas>
-							</div>
-						</div>
-						<div class="stats-row-right">
-							<div class="card-extra-label">AI · Technical breadth</div>
-							<div id="technical-breadth-score" class="card-extra-value">—</div>
-							<div class="card-extra-sublabel">Languages, frameworks &amp; domains (0–100)</div>
-						</div>
+					<div id="chart-wrapper">
+						<canvas id="language-chart"></canvas>
 					</div>
 				</div>
-				<div class="stats-box stats-box-fullrow" id="stats-box-2">
-					<span class="box-header">Quick Stats</span>
+				<div class="stats-box" id="stats-box-2">
+					<span class="box-header">Overall Score</span>
 					<div class="stats-row-inner">
-						<div class="stats-row-left">
-	    					<div class="quick-grid-container">
-	        					<div class="mini-stat">
-	            				<span class="mini-label">Repos</span>
-								<div class="icon-wrapper">
-									<img src="res/repo.png" id="repo-icon" class="stat-icon" alt="Repositories" title="Repositories">
-									<span id="repo-stat" class="mini-value">0</span>
-								</div>
-	        				</div>
-	        				<div class="mini-stat">
-	            				<span class="mini-label">Stars</span>
-								<div class="icon-wrapper">
-	                				<img src="res/star.png" id="star-icon" class="stat-icon" alt="Stars" title="Stars">
-	                				<span id="star-stat" class="mini-value">0</span>
-	            				</div>
-	        				</div>
-	        				<div class="mini-stat">
-	            				<span class="mini-label">Forks</span>
-								<div class="icon-wrapper">
-									<img src="res/fork.png" id="fork-icon" class="stat-icon" alt="Forks" title="Forks">
-	            					<span id="fork-stat" class="mini-value">0</span>
-								</div>
-	        				</div>
-	    				</div>
+        				<div class="stats-row-left">
+							<div class="progress-container">
+								<svg class="progress-ring" width="200" height="200">
+        							<circle class="progress-ring__background" stroke="#444" stroke-width="12" fill="transparent" r="80" cx="100" cy="100"/>
+        							<circle id="ai-score-ring" class="progress-ring__circle" stroke-width="12" stroke-linecap="round" fill="transparent" r="80" cx="100" cy="100"/>
+    							</svg>
+								<div id="ai-score-value" class="ai-score-number">—</div>
+							</div>
 						</div>
 						<div class="stats-row-right">
-							<div class="card-extra-label">AI · Project complexity</div>
-							<div id="project-complexity-score" class="card-extra-value">—</div>
-							<div class="card-extra-sublabel">Architecture, tests &amp; CI (0–100)</div>
-							<div class="card-extra-activity">
-								<span id="commits-stat" class="card-extra-stat">Commits (sampled): —</span>
-								<span id="pulls-stat" class="card-extra-stat">PRs: —</span>
-							</div>
-							<p id="quickstats-no-ai" class="ai-no-report hidden">No AI report for scores.</p>
+							<p id="ai-recommendation-short" class="ai-recommendation-short"></p>
+							<p id="ai-no-report" class="ai-no-report hidden">No AI report yet. Run analysis from the backend to see scores and recommendation.</p>
 						</div>
 					</div>
 				</div>
 				<div class="stats-box" id="stats-box-3">
-					<span class="box-header">AI Score</span>
-					<div id="ai-score-value" class="ai-score-number">—</div>
-					<p id="ai-recommendation-short" class="ai-recommendation-short"></p>
-					<p id="ai-no-report" class="ai-no-report hidden">No AI report yet. Run analysis from the backend to see scores and recommendation.</p>
+					<span class="box-header">Quick Stats</span>
+	    			<div class="quick-grid-container">
+	        			<div class="mini-stat">
+	            			<span class="mini-label">Repos</span>
+							<div class="icon-wrapper">
+								<img src="res/repo.png" id="repo-icon" class="stat-icon" alt="Repositories" title="Repositories">
+								<span id="repo-stat" class="mini-value">0</span>
+							</div>
+	        			</div>
+	        			<div class="mini-stat">
+	            			<span class="mini-label">Stars</span>
+							<div class="icon-wrapper">
+	                			<img src="res/star.png" id="star-icon" class="stat-icon" alt="Stars" title="Stars">
+	                			<span id="star-stat" class="mini-value">0</span>
+	            			</div>
+	        			</div>
+	        			<div class="mini-stat">
+	            			<span class="mini-label">Forks</span>
+							<div class="icon-wrapper">
+								<img src="res/fork.png" id="fork-icon" class="stat-icon" alt="Forks" title="Forks">
+	            				<span id="fork-stat" class="mini-value">0</span>
+							</div>
+	        			</div>
+					</div>
 				</div>
 				<div class="stats-box" id="stats-box-4">
 					<span class="box-header">Strengths &amp; Weaknesses</span>
-					<div id="strengths-weaknesses-wrap" class="sw-lists">
-						<div class="sw-col"><span class="sw-label">Strengths</span><ul id="strengths-list"></ul></div>
-						<div class="sw-col"><span class="sw-label">Weaknesses</span><ul id="weaknesses-list"></ul></div>
+					<div id="sw-grid-container" class="sw-lists">
+						<div class="sw-grid-stat">
+							<span class="sw-label">Strengths</span>
+							<ul id="strengths-list"></ul>
+						</div>
+						<div class="sw-grid-stat">
+							<span class="sw-label">Weaknesses</span>
+							<ul id="weaknesses-list"></ul>
+						</div>
 					</div>
 					<p id="ai-no-sw" class="ai-no-report hidden">No AI report yet.</p>
+				</div>
+				<div class="stats-box" id="stats-box-5">
+					<span class="box-header">Technical Highlights</span>
+					<ul id="tech-highlights-list" class="sw-grid-list" style="padding: 20px; width: 100%; box-sizing: border-box;"></ul>
+				</div>
+				<div class="stats-box" id="stats-box-6">
+					<span class="box-header">Improvement Suggestions</span>
+					<ul id="improvement-suggestions-list" class="sw-grid-list" style="padding: 20px; width: 100%; box-sizing: border-box;"></ul>
 				</div>
 			</div>
 			<div id="download-pdf-wrap" class="download-pdf-wrap hidden">
@@ -134,7 +137,7 @@
 				</div>
 			</div>
         </div>
-		<div id="scroll-indicator" class="hidden">
+		<div id="scroll-indicator">
     		<span>Scroll for more info</span>
     		<div class="arrow-down"></div>
 		</div>

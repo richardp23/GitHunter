@@ -1,6 +1,7 @@
 Chart.register(ChartDataLabels);
 let languageChart = null;
 let firstSearch = true;
+
 /** Set when a report is rendered; used by the Download PDF button. */
 let lastReportUsername = null;
 
@@ -48,6 +49,19 @@ function clearFakeLoadingIntervals() {
         clearInterval(fakeMessageIntervalId);
         fakeMessageIntervalId = null;
     }
+}
+
+function animateValue(obj, start, end, duration) {
+    let startTimestamp = null;
+    const step = (timestamp) => {
+        if (!startTimestamp) startTimestamp = timestamp;
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        obj.innerHTML = Math.floor(progress * (end - start) + start);
+        if (progress < 1) {
+            window.requestAnimationFrame(step);
+        }
+    };
+    window.requestAnimationFrame(step);
 }
 
 function updateAnalyzingUI(progress, text) {
@@ -170,169 +184,232 @@ function renderReport(data) {
             void box.offsetHeight;
             setTimeout(() => box.classList.add("refresh-flip-360"), index * 150);
         });
-        if (languageChart) {
-            languageChart.destroy();
-            ctx.canvas.width = ctx.canvas.width;
+    }
+
+    function updateScrollIndicator() {
+        const scrollHint = document.getElementById('scroll-indicator');
+
+        // Check if the body content is taller than the window height
+        const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
+
+        if (isScrollable) {
+            scrollHint.classList.add('visible');
+        } else {
+            scrollHint.classList.remove('visible');
         }
+    }
+
+    window.onscroll = function() {
+        const scrollHint = document.getElementById('scroll-indicator');
+        // Hide if user scrolls down more than 20px
+        if (window.scrollY > 20) {
+            scrollHint.classList.remove('visible');
+        } else {
+            // Re-check if it should reappear when back at the top
+            updateScrollIndicator();
+        }
+    };
+
+    setTimeout(() => {
+        if (languageChart) {
+                languageChart.destroy();
+                ctx.canvas.width = ctx.canvas.width;
+            }
         repoDisplay.innerText = "0";
         starDisplay.innerText = "0";
         forkDisplay.innerText = "0";
         repoDisplay.style.color = "#ffffff";
         starDisplay.style.color = "#ffffff";
         forkDisplay.style.color = "#ffffff";
-    }
+        const report = data.report || data;
+        lastReportUsername = report.user?.login || report.user?.name || null;
+        avatarImg.src = report.user.avatar_url;
+        displayName.innerText = report.user.name || report.user.login;
 
-    const report = data.report || data;
-    lastReportUsername = report.user?.login || report.user?.name || null;
-    avatarImg.src = report.user.avatar_url;
-    displayName.innerText = report.user.name || report.user.login;
-
-    const languages = report.stats.language || {};
-    const topLanguage = document.getElementById("language-header");
-    let labels = [], values = [];
-    if (Object.keys(languages).length === 0) {
-        topLanguage.innerText = "Nothing!";
-    } else {
-        const sortedEntries = Object.entries(languages).sort(([, a], [, b]) => b - a);
-        labels = sortedEntries.map((e) => e[0]);
-        values = sortedEntries.map((e) => e[1]);
-        topLanguage.innerText = sortedEntries[0][0];
-    }
-
-    const generateReverseRainbow = (count) => {
-        const colors = [];
-        for (let i = 0; i < count; i++) {
-            const h = 360 - (i * (360 / count));
-            colors.push(`hsl(${h}, 75%, 60%)`);
+        const languages = report.stats.language || {};
+        const topLanguage = document.getElementById("language-header");
+        let labels = [], values = [];
+        if (Object.keys(languages).length === 0) {
+            topLanguage.innerText = "Nothing!";
+        } else {
+            const sortedEntries = Object.entries(languages).sort(([, a], [, b]) => b - a);
+            labels = sortedEntries.map((e) => e[0]);
+            values = sortedEntries.map((e) => e[1]);
+            topLanguage.innerText = sortedEntries[0][0];
         }
-        return colors;
-    };
 
-    languageChart = new Chart(ctx, {
-        type: "pie",
-        data: {
-            labels,
-            datasets: [{ label: "Languages Used", data: values, backgroundColor: generateReverseRainbow(labels.length), borderWidth: 2 }],
-        },
-        options: {
-            color: "#fff",
-            maintainAspectRatio: true,
-            aspectRatio: 1,
-            responsive: true,
-            resizeDelay: 0,
-            events: ["mousemove", "mouseout", "click", "touchstart", "touchmove"],
-            interaction: { mode: "nearest", intersect: true },
-            plugins: {
-                legend: { position: "right", labels: { font: { size: 20, family: "'Outfit', sans-serif", weight: "500" } } },
-                datalabels: {
-                    anchor: "end",
-                    align: "start",
-                    offset: 10,
-                    formatter: (value, ctx) => {
-                        const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                        return ((value / total) * 100).toFixed(1) + "%";
-                    },
-                    color: "#fff",
+        const generateReverseRainbow = (count) => {
+            const colors = [];
+            for (let i = 0; i < count; i++) {
+                const h = 360 - (i * (360 / count));
+                colors.push(`hsl(${h}, 75%, 60%)`);
+            }
+            return colors;
+        };
+
+        languageChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels,
+                datasets: [{ label: "Languages Used", data: values, backgroundColor: generateReverseRainbow(labels.length), borderWidth: 2 }],
+            },
+            options: {
+                color: "#fff",
+                maintainAspectRatio: true,
+                aspectRatio: 1,
+                responsive: true,
+                resizeDelay: 0,
+                events: ["mousemove", "mouseout", "click", "touchstart", "touchmove"],
+                interaction: { mode: "nearest", intersect: true },
+                plugins: {
+                    legend: { position: "right", labels: { font: { size: 20, family: "'Outfit', sans-serif", weight: "500" } } },
+                    datalabels: {
+                        anchor: "end",
+                        align: "start",
+                        offset: 10,
+                        formatter: (value, ctx) => {
+                            const total = ctx.chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            return ((value / total) * 100).toFixed(1) + "%";
+                        },
+                        color: "#fff",
                     font: { size: 16, family: "'Outfit', sans-serif", weight: "500" },
+                    },
                 },
             },
-        },
-    });
+        });
 
-    const totalRepos = report.user.public_repos;
-    const totalStars = report.stats.stars;
-    const totalForks = report.stats.fork_count;
-    const totalCommits = report.stats.commits != null ? report.stats.commits : null;
-    const totalPulls = report.stats.pulls != null ? report.stats.pulls : null;
-    repoDisplay.innerText = totalRepos;
-    starDisplay.innerText = totalStars;
-    forkDisplay.innerText = totalForks;
-    const getColor = (val) => {
-        const ratio = Math.min(val / 20, 1);
-        return `rgb(${Math.floor(255 * (1 - ratio))}, ${Math.floor(255 * ratio)}, 0)`;
-    };
-    repoDisplay.style.color = getColor(totalRepos);
-    starDisplay.style.color = getColor(totalStars);
-    forkDisplay.style.color = getColor(totalForks);
+        const totalRepos = report.user.public_repos;
+        const totalStars = report.stats.stars;
+        const totalForks = report.stats.user_forked_projects;
+        const totalCommits = report.stats.commits != null ? report.stats.commits : null;
+        const totalPulls = report.stats.pulls != null ? report.stats.pulls : null;
+        repoDisplay.innerText = totalRepos;
+        starDisplay.innerText = totalStars;
+        forkDisplay.innerText = totalForks;
+        const getColor = (val) => {
+            const ratio = Math.min(val / 20, 1);
+            return `rgb(${Math.floor(255 * (1 - ratio))}, ${Math.floor(255 * ratio)}, 0)`;
+        };
+        repoDisplay.style.color = getColor(totalRepos);
+        starDisplay.style.color = getColor(totalStars);
+        forkDisplay.style.color = getColor(totalForks);
 
-    const aiScoreEl = document.getElementById("ai-score-value");
-    const aiRecShortEl = document.getElementById("ai-recommendation-short");
-    const aiNoReportEl = document.getElementById("ai-no-report");
-    const aiNoSwEl = document.getElementById("ai-no-sw");
-    const strengthsList = document.getElementById("strengths-list");
-    const weaknessesList = document.getElementById("weaknesses-list");
-    const aiMoreSection = document.getElementById("ai-report-more");
-    const aiScoreBreakdownEl = document.getElementById("ai-score-breakdown");
-    const scoreBreakdownBlock = document.getElementById("score-breakdown-block");
-    const aiRecFullEl = document.getElementById("ai-recommendation-full");
-    const highlightsList = document.getElementById("highlights-list");
-    const suggestionsList = document.getElementById("suggestions-list");
+        const aiScoreEl = document.getElementById("ai-score-value");
+        const aiRecShortEl = document.getElementById("ai-recommendation-short");
+        const aiNoReportEl = document.getElementById("ai-no-report");
+        const aiNoSwEl = document.getElementById("ai-no-sw");
+        const strengthsList = document.getElementById("strengths-list");
+        const weaknessesList = document.getElementById("weaknesses-list");
+        const aiMoreSection = document.getElementById("ai-report-more");
+        const aiScoreBreakdownEl = document.getElementById("ai-score-breakdown");
+        const scoreBreakdownBlock = document.getElementById("score-breakdown-block");
+        const aiRecFullEl = document.getElementById("ai-recommendation-full");
+        const highlightsList = document.getElementById("highlights-list");
+        const techHighlightsList = document.getElementById("tech-highlights-list");
+        const suggestionsList = document.getElementById("suggestions-list");
+        const improvementSuggestionsList = document.getElementById("improvement-suggestions-list");
+        const technicalBreadthEl = document.getElementById("technical-breadth-score");
+        const projectComplexityEl = document.getElementById("project-complexity-score");
+        const commitsStatEl = document.getElementById("commits-stat");
+        const pullsStatEl = document.getElementById("pulls-stat");
+        const quickstatsNoAi = document.getElementById("quickstats-no-ai");
 
-    const technicalBreadthEl = document.getElementById("technical-breadth-score");
-    const projectComplexityEl = document.getElementById("project-complexity-score");
-    const commitsStatEl = document.getElementById("commits-stat");
-    const pullsStatEl = document.getElementById("pulls-stat");
-    const quickstatsNoAi = document.getElementById("quickstats-no-ai");
+        [strengthsList, weaknessesList, techHighlightsList, highlightsList, improvementSuggestionsList, suggestionsList].forEach((el) => { el.innerHTML = ""; });
 
-    [strengthsList, weaknessesList, highlightsList, suggestionsList].forEach((el) => { el.innerHTML = ""; });
+        const hasAiData = data.scores != null;
 
-    const hasAiData = data.scores != null;
+        if (technicalBreadthEl) {
+            const tb = hasAiData && data.scores.categoryScores && data.scores.categoryScores.technicalBreadth != null
+                ? data.scores.categoryScores.technicalBreadth
+                : null;
+            technicalBreadthEl.textContent = tb != null ? tb : "—";
+            technicalBreadthEl.classList.toggle("no-ai", tb == null);
+        }
+        if (projectComplexityEl) {
+            const pc = hasAiData && data.scores.categoryScores && data.scores.categoryScores.projectComplexity != null
+                ? data.scores.categoryScores.projectComplexity
+                : null;
+            projectComplexityEl.textContent = pc != null ? pc : "—";
+            projectComplexityEl.classList.toggle("no-ai", pc == null);
+        }
+        if (commitsStatEl) commitsStatEl.textContent = totalCommits != null ? `Commits (sampled): ${totalCommits}` : "Commits (sampled): —";
+        if (pullsStatEl) pullsStatEl.textContent = totalPulls != null ? `PRs: ${totalPulls}` : "PRs: —";
+        if (quickstatsNoAi) quickstatsNoAi.classList.toggle("hidden", hasAiData);
+        if (hasAiData) {
+            console.log(data);
+            const score = data.scores.overallScore ?? 0;
+            aiScoreEl.textContent = score;
+            aiScoreEl.classList.remove("no-ai");
+            
+            const ring = document.getElementById("ai-score-ring");
+            const circumference = 502.6;
+            const offset = circumference - (score / 100) * circumference;
+    
+            // 2. Set dynamic colors (Red -> Green)
+            const hue = Math.min(Math.max(score * 1.2, 0), 120); 
+            const color = `hsl(${hue}, 80%, 60%)`;
 
-    if (technicalBreadthEl) {
-        const tb = hasAiData && data.scores.categoryScores && data.scores.categoryScores.technicalBreadth != null
-            ? data.scores.categoryScores.technicalBreadth
-            : null;
-        technicalBreadthEl.textContent = tb != null ? tb : "—";
-        technicalBreadthEl.classList.toggle("no-ai", tb == null);
-    }
-    if (projectComplexityEl) {
-        const pc = hasAiData && data.scores.categoryScores && data.scores.categoryScores.projectComplexity != null
-            ? data.scores.categoryScores.projectComplexity
-            : null;
-        projectComplexityEl.textContent = pc != null ? pc : "—";
-        projectComplexityEl.classList.toggle("no-ai", pc == null);
-    }
-    if (commitsStatEl) commitsStatEl.textContent = totalCommits != null ? `Commits (sampled): ${totalCommits}` : "Commits (sampled): —";
-    if (pullsStatEl) pullsStatEl.textContent = totalPulls != null ? `PRs: ${totalPulls}` : "PRs: —";
-    if (quickstatsNoAi) quickstatsNoAi.classList.toggle("hidden", hasAiData);
-    if (hasAiData) {
-        aiScoreEl.textContent = data.scores.overallScore ?? "—";
-        aiScoreEl.classList.remove("no-ai");
-        const rec = (data.hiringRecommendation || "").trim();
-        aiRecShortEl.textContent = rec || "";
-        aiRecShortEl.classList.remove("hidden");
-        aiNoReportEl.classList.add("hidden");
-        aiNoSwEl.classList.add("hidden");
-        (data.strengthsWeaknesses?.strengths || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; strengthsList.appendChild(li); });
-        (data.strengthsWeaknesses?.weaknesses || []).forEach((w) => { const li = document.createElement("li"); li.textContent = w; weaknessesList.appendChild(li); });
-        aiMoreSection.classList.remove("hidden");
-        const breakdown = (data.scoreBreakdown || "").trim();
-        if (aiScoreBreakdownEl) aiScoreBreakdownEl.textContent = breakdown || "";
-        if (scoreBreakdownBlock) scoreBreakdownBlock.style.display = breakdown ? "block" : "none";
-        aiRecFullEl.textContent = rec || "";
-        (data.technicalHighlights || []).forEach((h) => { const li = document.createElement("li"); li.textContent = h; highlightsList.appendChild(li); });
-        (data.improvementSuggestions || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; suggestionsList.appendChild(li); });
-    } else {
-        aiScoreEl.textContent = "—";
-        aiScoreEl.classList.add("no-ai");
-        aiRecShortEl.textContent = "";
-        aiRecShortEl.classList.add("hidden");
-        aiNoReportEl.classList.remove("hidden");
-        aiNoSwEl.classList.remove("hidden");
-        aiMoreSection.classList.add("hidden");
-        if (aiScoreBreakdownEl) aiScoreBreakdownEl.textContent = "";
-        if (scoreBreakdownBlock) scoreBreakdownBlock.style.display = "block";
-        aiRecFullEl.textContent = "";
-    }
+            // 3. Apply styles to the Ring
+            if (ring) {
+                ring.style.strokeDasharray = circumference;
+                ring.style.strokeDashoffset = offset;
+                ring.style.stroke = color;
+                ring.style.filter = `drop-shadow(0 0 4px ${color})`;
+            }
 
+            // 4. Apply styles and animate the Number
+            if (aiScoreEl) {
+                aiScoreEl.classList.remove("no-ai");
+                aiScoreEl.style.color = color;
+                // Animates from 0 to the final score over 1 second
+                animateValue(aiScoreEl, 0, score, 1000); 
+            }
+
+            aiScoreEl.style.color = `hsl(${hue}, 80%, 60%)`;
+            const rec = (data.hiringRecommendation || "").trim();
+            aiRecShortEl.textContent = rec || "";
+            aiRecShortEl.classList.remove("hidden");
+            aiNoReportEl.classList.add("hidden");
+            aiNoSwEl.classList.add("hidden");
+            (data.strengthsWeaknesses?.strengths || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; strengthsList.appendChild(li); });
+            (data.strengthsWeaknesses?.weaknesses || []).forEach((w) => { const li = document.createElement("li"); li.textContent = w; weaknessesList.appendChild(li); });
+            (data.technicalHighlights || []).forEach((h) => { const li = document.createElement("li"); li.textContent = h; techHighlightsList.appendChild(li); });
+            aiMoreSection.classList.remove("hidden");
+            const breakdown = (data.scoreBreakdown || "").trim();
+            if (aiScoreBreakdownEl) aiScoreBreakdownEl.textContent = breakdown || "";
+            if (scoreBreakdownBlock) scoreBreakdownBlock.style.display = breakdown ? "block" : "none";
+            aiRecFullEl.textContent = rec || "";
+            (data.technicalHighlights || []).forEach((h) => { const li = document.createElement("li"); li.textContent = h; highlightsList.appendChild(li); });
+            (data.improvementSuggestions || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; suggestionsList.appendChild(li); });
+            (data.improvementSuggestions || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; improvementSuggestionsList.appendChild(li); });
+        } else {
+            aiScoreEl.textContent = "—";
+            aiScoreEl.classList.add("no-ai");
+            aiRecShortEl.textContent = "";
+            aiRecShortEl.classList.add("hidden");
+            aiNoReportEl.classList.remove("hidden");
+            aiNoSwEl.classList.remove("hidden");
+            aiMoreSection.classList.add("hidden");
+            if (aiScoreBreakdownEl) aiScoreBreakdownEl.textContent = "";
+            if (scoreBreakdownBlock) scoreBreakdownBlock.style.display = "block";
+            aiRecFullEl.textContent = "";
+        }
+
+        const downloadWrap = document.getElementById("download-pdf-wrap");
+        if (downloadWrap) {
+            downloadWrap.classList.remove("hidden");
+        }
+    }, 400);
+
+    setTimeout(() => {
     const scrollHint = document.getElementById("scroll-indicator");
-    if (document.documentElement.scrollHeight > window.innerHeight) scrollHint.classList.add("visible");
-    else scrollHint.classList.remove("visible");
-
-    const downloadWrap = document.getElementById("download-pdf-wrap");
-    if (downloadWrap) {
-        downloadWrap.classList.remove("hidden");
+    const isScrollable = document.documentElement.scrollHeight > window.innerHeight;
+    if (isScrollable) {
+        scrollHint.classList.add("visible");
+    } else {
+        scrollHint.classList.remove("visible");
     }
+    }, 1200);
 }
 
 async function downloadPdfReport() {
@@ -413,6 +490,28 @@ async function sendToBackend(event) {
         if (latestRes.ok) {
             const data = await latestRes.json();
             renderReport(data);
+            usernameInput.disabled = false;
+            submitButton.disabled = false;
+            submitButton.innerText = "Search";
+            return;
+        }
+
+        const gitHubCheck = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}`);
+        if (gitHubCheck.status === 404) {
+            // User definitely does not exist
+            usernameInput.value = "";
+            usernameInput.placeholder = "GitHub user not found!";
+            usernameInput.classList.add("error-shake");
+            
+            // Reset UI immediately
+            usernameInput.disabled = false;
+            submitButton.disabled = false;
+            submitButton.innerText = "Search";
+
+            setTimeout(() => {
+                usernameInput.classList.remove("error-shake");
+                usernameInput.placeholder = "Enter a GitHub username...";
+            }, 2500);
             return;
         }
 
@@ -427,6 +526,11 @@ async function sendToBackend(event) {
             usernameInput.value = "";
             usernameInput.placeholder = body.error || "Request failed. Try again.";
             usernameInput.classList.add("error-shake");
+
+            usernameInput.disabled = false;
+            submitButton.disabled = false;
+            submitButton.innerText = "Search";
+
             setTimeout(() => {
                 usernameInput.classList.remove("error-shake");
                 usernameInput.placeholder = "Enter a GitHub username...";
@@ -437,6 +541,9 @@ async function sendToBackend(event) {
         const jobId = body.jobId;
         if (!jobId) {
             usernameInput.placeholder = "No job ID returned. Try again.";
+            usernameInput.disabled = false;
+            submitButton.disabled = false;
+            submitButton.innerText = "Search";
             return;
         }
 
@@ -450,6 +557,9 @@ async function sendToBackend(event) {
             if (!status) {
                 showAnalyzingState(false);
                 usernameInput.placeholder = "Could not get status. Try again.";
+                usernameInput.disabled = false;
+                submitButton.disabled = false;
+                submitButton.innerText = "Search";
                 return;
             }
 
@@ -464,11 +574,18 @@ async function sendToBackend(event) {
                 } else {
                     usernameInput.placeholder = "Report not found. Try again.";
                 }
+
+                usernameInput.disabled = false;
+                submitButton.disabled = false;
+                submitButton.innerText = "Search";
                 return;
             }
             if (status.status === "failed") {
                 showAnalyzingState(false);
                 usernameInput.placeholder = "Analysis failed. Try again.";
+                usernameInput.disabled = false;
+                submitButton.disabled = false;
+                submitButton.innerText = "Search";
                 return;
             }
             setTimeout(poll, POLL_INTERVAL_MS);
@@ -478,15 +595,8 @@ async function sendToBackend(event) {
         console.error(err);
         showAnalyzingState(false);
         usernameInput.placeholder = "Network error. Try again.";
-    } finally {
         usernameInput.disabled = false;
         submitButton.disabled = false;
         submitButton.innerText = "Search";
     }
 }
-
-window.onscroll = function () {
-    const scrollHint = document.getElementById("scroll-indicator");
-    if (window.scrollY > 20) scrollHint.classList.remove("visible");
-    else if (document.documentElement.scrollHeight > window.innerHeight) scrollHint.classList.add("visible");
-};
