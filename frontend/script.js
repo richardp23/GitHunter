@@ -159,16 +159,23 @@ async function sendToBackend(event) {
             topLanguage.innerText = topEntry;
         }
 
-        const generateGradients = (count) => {
+        const generateReverseRainbow = (count) => {
             const colors = [];
             for (let i = 0; i < count; i++) {
-                const lightness = 30 + (i * (50 / count)); 
-                colors.push(`hsl(220, 70%, ${lightness}%)`);
+                // Start at 360 and go down to 0
+                // (i / count) creates a percentage, which we multiply by 360
+                const h = 360 - (i * (360 / count));
+        
+                // Keep Saturation and Lightness consistent for a clean look
+                const s = 75; 
+                const l = 60;
+        
+                colors.push(`hsl(${h}, ${s}%, ${l}%)`);
             }
             return colors;
         };
 
-        const dynamicColors = generateGradients(labels.length);
+        const dynamicColors = generateReverseRainbow(labels.length);
 
         languageChart = new Chart(ctx, {
             type: 'pie',
