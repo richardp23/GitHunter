@@ -1,0 +1,8 @@
+{
+  "name": "githunter",
+  "private": true,
+  "scripts": {
+    "build": "cd backend && npm install && cp -r ../frontend public",
+    "start": "cd backend && node index.js"
+  }
+}
