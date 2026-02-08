@@ -8,11 +8,7 @@ const express = require("express");
 const { getReportByUsername } = require("../utils/cache");
 const { generatePresentation } = require("../services/slidesService");
 const { cleanupQueue } = require("../utils/queue");
-const {
-  GOOGLE_APPLICATION_CREDENTIALS,
-  GOOGLE_SERVICE_ACCOUNT_JSON,
-  SLIDES_CLEANUP_DELAY_MS,
-} = require("../config/env");
+const { isSlidesConfigured, SLIDES_CLEANUP_DELAY_MS } = require("../config/env");
 
 const router = express.Router();
 
@@ -38,9 +34,10 @@ router.post("/generate", async (req, res) => {
     });
   }
 
-  if (!GOOGLE_APPLICATION_CREDENTIALS && !GOOGLE_SERVICE_ACCOUNT_JSON) {
+  if (!isSlidesConfigured()) {
     return res.status(503).json({
-      error: "Google Slides API is not configured. Set GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_SERVICE_ACCOUNT_JSON.",
+      error:
+        "Google Slides API is not configured. Use OAuth (GOOGLE_OAUTH_*) or service account credentials.",
     });
   }
 
@@ -56,7 +53,7 @@ router.post("/generate", async (req, res) => {
     const code = err.code ?? err.status ?? err.response?.status;
     if (code === 403 || /permission|PERMISSION_DENIED/i.test(message)) {
       message =
-        "Google Slides API returned permission denied. Enable Google Slides API and Drive API in the same GCP project as your service account key, then try again.";
+        "Google Slides API returned permission denied. If using a service account, ensure APIs are enabled and consider using OAuth (obtain-google-oauth-token.js) or SLIDES_DRIVE_FOLDER_ID.";
     }
     const status = message.includes("not set") || code === 503 ? 503 : code === 403 ? 403 : 500;
     return res.status(status).json({ error: message });

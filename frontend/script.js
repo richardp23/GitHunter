@@ -583,8 +583,11 @@ async function createSlidesPresentation() {
             alert(data.error || "Could not create presentation.");
             return;
         }
-        const link = data.copyUrl || data.url;
+        const link = data.url || data.copyUrl || (data.presentationId
+            ? `https://docs.google.com/presentation/d/${data.presentationId}/edit`
+            : null);
         if (link) {
+            console.log("Presentation made at", link);
             window.open(link, "_blank", "noopener,noreferrer");
         } else {
             alert("No link returned.");
