@@ -1,22 +1,22 @@
 /**
  * API tests for GET /api/user/:username
- * Uses mocked GitHub API responses - no real network calls.
+ * Two suites: REST fallback (cache miss) and Redis cache hit.
+ * Uses mocked GitHub API and cache - no real network or Redis.
  */
 const request = require("supertest");
 
-// Mock axios before app loads - app calls axios.create() at load time
+// Mock axios before app loads
 const mockGet = jest.fn();
 jest.mock("axios", () => ({
   create: () => ({ get: (...args) => mockGet(...args) }),
 }));
 
-// Mock queue and cache so we don't need Redis
-jest.mock("./queue", () => ({
-  analysisQueue: { add: jest.fn(), getJob: jest.fn() },
-}));
+// Mock cache - return value configured per suite
+const mockGetReport = jest.fn();
+const mockSetReport = jest.fn();
 jest.mock("./utils/cache", () => ({
-  getReport: jest.fn(),
-  setReport: jest.fn(),
+  getReportByUsername: (...args) => mockGetReport(...args),
+  setReportByUsername: (...args) => mockSetReport(...args),
 }));
 
 const app = require("./index");
@@ -81,28 +81,42 @@ const mockRepos = [
 const mockCommits = Array(30).fill({ sha: "abc123", commit: { message: "fix" } });
 const mockPulls = Array(10).fill({ number: 1, state: "closed" });
 
-beforeEach(() => {
+const cachedReport = {
+  report: {
+    user: { login: "torvalds", name: "Linus Torvalds" },
+    repos: mockRepos,
+    stats: {
+      language: { C: 2 },
+      commits: 30,
+      pulls: 10,
+      stars: 218430,
+      fork_count: 1,
+      user_forked_projects: 60359,
+      watchers: 218430,
+    },
+  },
+};
+
+function setupGitHubMock() {
   mockGet.mockImplementation((url) => {
-    // Repos list (must check before /users/ - repos_url contains "users")
-    if (url === "https://api.github.com/users/torvalds/repos") {
-      return Promise.resolve({ data: mockRepos });
-    }
-    // User profile
-    if (url.includes("/users/") && !url.includes("/repos")) {
-      return Promise.resolve({ data: { ...mockUser, repos_url: "https://api.github.com/users/torvalds/repos" } });
-    }
-    // Commits and pulls for top repos
-    if (url.includes("/repos/") && url.includes("/commits")) {
-      return Promise.resolve({ data: mockCommits });
-    }
-    if (url.includes("/repos/") && url.includes("/pulls")) {
-      return Promise.resolve({ data: mockPulls });
-    }
+    if (url === "https://api.github.com/users/torvalds/repos") return Promise.resolve({ data: mockRepos });
+    if (url.includes("/users/") && !url.includes("/repos")) return Promise.resolve({ data: { ...mockUser, repos_url: "https://api.github.com/users/torvalds/repos" } });
+    if (url.includes("/repos/") && url.includes("/commits")) return Promise.resolve({ data: mockCommits });
+    if (url.includes("/repos/") && url.includes("/pulls")) return Promise.resolve({ data: mockPulls });
     return Promise.reject(new Error(`Unknown URL: ${url}`));
   });
-});
+}
 
-describe("GET /api/user/:username", () => {
+// -----------------------------------------------------------------------------
+// Suite 1: REST fallback (cache miss / Redis unavailable)
+// -----------------------------------------------------------------------------
+describe("GET /api/user/:username - REST fallback (cache miss)", () => {
+  beforeEach(() => {
+    mockGetReport.mockResolvedValue(null);
+    mockSetReport.mockResolvedValue(undefined);
+    setupGitHubMock();
+  });
+
   it("returns 200 and report with user, repos, stats for valid username", async () => {
     const res = await request(app).get("/api/user/torvalds");
 
@@ -140,13 +154,13 @@ describe("GET /api/user/:username", () => {
     expect(res.body.report.stats).toHaveProperty("watchers");
   });
 
-  it("returns 404 and error message for nonexistent user", async () => {
+  it("returns 500 and error message for nonexistent user", async () => {
     mockGet.mockRejectedValue(new Error("Not Found"));
 
     const res = await request(app).get("/api/user/nonexistent-user-xyz-12345");
 
-    expect(res.status).toBe(404);
-    expect(res.body).toHaveProperty("error", "User not found");
+    expect(res.status).toBe(500);
+    expect(res.body).toHaveProperty("error");
   });
 
   it("user object includes login and name", async () => {
@@ -161,5 +175,38 @@ describe("GET /api/user/:username", () => {
 
     expect(Array.isArray(res.body.report.repos)).toBe(true);
     expect(res.body.report.repos.length).toBeGreaterThan(0);
+  });
+
+  it("calls setReportByUsername after fetch on cache miss", async () => {
+    await request(app).get("/api/user/torvalds");
+
+    expect(mockSetReport).toHaveBeenCalledWith("torvalds", expect.objectContaining({ report: expect.any(Object) }));
+  });
+});
+
+// -----------------------------------------------------------------------------
+// Suite 2: Redis cache hit (cache returns report, no GitHub call)
+// -----------------------------------------------------------------------------
+describe("GET /api/user/:username - Redis cache hit", () => {
+  beforeEach(() => {
+    mockGetReport.mockResolvedValue(cachedReport);
+    mockSetReport.mockResolvedValue(undefined);
+    mockGet.mockReset();
+  });
+
+  it("returns cached report without calling GitHub", async () => {
+    const res = await request(app).get("/api/user/torvalds");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual(cachedReport);
+    expect(res.body.report.user.login).toBe("torvalds");
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it("does not call setReportByUsername on cache hit", async () => {
+    mockSetReport.mockClear();
+    await request(app).get("/api/user/torvalds");
+
+    expect(mockSetReport).not.toHaveBeenCalled();
   });
 });

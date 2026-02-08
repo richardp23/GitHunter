@@ -5,10 +5,9 @@
   "scripts": {
     "start": "node index.js",
     "test": "jest --forceExit",
-    "test:unit": "jest api.test.js api.queue.test.js --forceExit",
+    "test:unit": "jest api.test.js --forceExit",
     "test:integration": "jest api.integration.test.js --forceExit",
-    "test:queue:integration": "jest api.queue.integration.test.js --forceExit"
-  },
+    "test:cache:integration": "node scripts/run-cache-tests.js"  },
   "keywords": [],
   "author": "",
   "license": "ISC",

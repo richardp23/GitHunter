@@ -12,17 +12,32 @@ function getClient() {
   return client;
 }
 
-async function setReport(jobId, report) {
-  const c = getClient();
-  const key = `report:${jobId}`;
-  await c.setex(key, REPORT_TTL, JSON.stringify(report));
+/**
+ * Get cached report by username. Returns null if Redis unavailable or cache miss.
+ */
+async function getReportByUsername(username) {
+  try {
+    const c = getClient();
+    const key = `report:user:${username}`;
+    const data = await c.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    // Redis unavailable - fallback to REST
+    return null;
+  }
 }
 
-async function getReport(jobId) {
-  const c = getClient();
-  const key = `report:${jobId}`;
-  const data = await c.get(key);
-  return data ? JSON.parse(data) : null;
+/**
+ * Cache report by username. No-op if Redis unavailable.
+ */
+async function setReportByUsername(username, report) {
+  try {
+    const c = getClient();
+    const key = `report:user:${username}`;
+    await c.setex(key, REPORT_TTL, JSON.stringify(report));
+  } catch (err) {
+    // Redis unavailable - skip cache, report still returned
+  }
 }
 
 async function close() {
@@ -32,4 +47,4 @@ async function close() {
   }
 }
 
-module.exports = { setReport, getReport, getClient, close };
+module.exports = { getReportByUsername, setReportByUsername, getClient, close };

@@ -5,9 +5,11 @@
  */
 const request = require("supertest");
 
-// Mock queue and cache so index loads without Redis
-jest.mock("./queue", () => ({ analysisQueue: { add: () => {}, getJob: () => {} } }));
-jest.mock("./utils/cache", () => ({ getReport: () => null, setReport: () => {} }));
+// Mock cache so index loads without Redis - cache miss, fallback to REST
+jest.mock("./utils/cache", () => ({
+  getReportByUsername: () => null,
+  setReportByUsername: () => {},
+}));
 
 const app = require("./index");
 
