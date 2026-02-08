@@ -16,7 +16,8 @@ function getClient() {
     });
 
     client.on("error", (err) => {
-      throw new Error("Redis unavailable, falling back to REST.");
+      // Log the error, but do not throw, so the app continues operating
+      console.error("Redis error (using REST fallback):", err.message || err);
     });
   }
   return client;
