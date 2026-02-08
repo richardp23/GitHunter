@@ -882,6 +882,8 @@ h2 {
     padding: 9 0 10px 0;
     gap: 40px; /* This is your fixed distance between each stat */
     grid-column: 1 / -1; /* Ensures it spans the full width of the grid */
+    height: 120px; 
+    box-sizing: border-box;
 }
 
 .mini-progress-wrapper {
@@ -890,6 +892,21 @@ h2 {
     align-items: center;
     width: 100px; /* Fixed width for each column to keep text aligned */
     gap: 12px;    /* Fixed distance between ring and label */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+}
+
+.mini-progress-wrapper:hover {
+    transform: scale(1.15);
+    z-index: 10; /* Ensures the hovered stat sits on top of others */
+}
+
+.mini-progress-wrapper:hover .progress-ring__circle {
+    filter: drop-shadow(0 0 3px currentColor);
+}
+
+.mini-progress-wrapper:hover .mini-ai-score-number {
+    filter: drop-shadow(0 0 3px currentColor);
 }
 
 .mini-progress-container {
@@ -915,7 +932,15 @@ h2 {
     text-transform: uppercase;
     letter-spacing: 1px;
     color: #aaa;
+    transition: all 0.3s ease;
 }
+
+.mini-progress-wrapper:hover .mini-ring-label {
+    color: #fff;
+    font-weight: 500;
+    font-size: 12px;
+}
+
 .progress-ring__circle {
     filter: drop-shadow(0 0 2px currentColor);
 }
