@@ -6,13 +6,13 @@
  */
 const request = require("supertest");
 
-jest.mock("../src/utils/cache", () => ({
+jest.mock("../../src/utils/cache", () => ({
   getReportByUsername: () => null,
   setReportByUsername: () => {},
   init: () => Promise.resolve(false),
 }));
 
-const { app, bootstrap } = require("../index");
+const { app, bootstrap } = require("../../index");
 
 beforeAll(async () => {
   await bootstrap();

@@ -1,1 +1,1 @@
-# Git-Hunter
+# GitHunter

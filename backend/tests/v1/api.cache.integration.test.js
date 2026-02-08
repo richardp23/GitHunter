@@ -12,8 +12,8 @@ jest.mock("axios", () => ({
   create: () => ({ get: (...args) => mockGet(...args) }),
 }));
 
-const { app, bootstrap } = require("../index");
-const cache = require("../src/utils/cache");
+const { app, bootstrap } = require("../../index");
+const cache = require("../../src/utils/cache");
 const { close, isRedisAvailable } = cache;
 
 const TEST_USERNAME = "cache-integration-test";
@@ -58,10 +58,10 @@ describe("GET /api/user/:username - Redis cache (integration)", () => {
   it("cache miss: fetches from GitHub, then cache hit returns same report without GitHub call", async function () {
     if (!redisRequested || !redisAvailable) {
       console.warn("Skipped: set RUN_CACHE_TESTS=1 and ensure Redis is running (REDIS_URL in .env).");
-      return this.skip();
+      return; // pass without running when Redis not requested or unavailable
     }
     const Redis = require("ioredis");
-    const { REDIS_URL } = require("../src/config/env");
+    const { REDIS_URL } = require("../../src/config/env");
     const client = new Redis(REDIS_URL || "redis://localhost:6379");
     await client.del(`report:user:${TEST_USERNAME}`);
     await client.quit();

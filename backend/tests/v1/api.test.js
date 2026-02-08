@@ -15,13 +15,13 @@ jest.mock("axios", () => ({
 // Mock cache - return value configured per suite
 const mockGetReport = jest.fn();
 const mockSetReport = jest.fn();
-jest.mock("../src/utils/cache", () => ({
+jest.mock("../../src/utils/cache", () => ({
   getReportByUsername: (...args) => mockGetReport(...args),
   setReportByUsername: (...args) => mockSetReport(...args),
   init: () => Promise.resolve(false),
 }));
 
-const { app } = require("../index");
+const { app } = require("../../index");
 
 const mockUser = {
   login: "torvalds",

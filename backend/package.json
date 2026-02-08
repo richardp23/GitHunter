@@ -4,10 +4,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "test": "jest --forceExit",
-    "test:unit": "jest tests/api.test.js --forceExit",
-    "test:integration": "jest tests/api.integration.test.js --forceExit",
-    "test:cache:integration": "cross-env RUN_CACHE_TESTS=1 jest tests/api.cache.integration.test.js --forceExit",
+    "test": "jest --forceExit --detectOpenHandles",
+    "test:unit": "jest tests/v1/api.test.js --forceExit",
+    "test:integration": "jest tests/v1/api.integration.test.js --forceExit",
+    "test:cache:integration": "cross-env RUN_CACHE_TESTS=1 jest tests/v1/api.cache.integration.test.js --forceExit",
     "test:v2": "jest tests/v2 --forceExit"
   },
   "keywords": [],

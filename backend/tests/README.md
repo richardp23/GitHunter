@@ -1,18 +1,18 @@
 # Backend tests
 
-All tests use the same **entry point** as the server: `require("../index")` or `require("../../index")` for `{ app, bootstrap }`. That keeps env (dotenv) and startup (Redis init) consistent with production.
+All tests use the same **entry point** as the server: `require("../../index")` from `tests/v1/` or `tests/v2/` for `{ app, bootstrap }`. That keeps env (dotenv) and startup (Redis init) consistent with production.
 
-## v1 suites (current)
+## v1 suites (`tests/v1/`)
 
 | Suite | File | What it does |
 |-------|------|---------------|
-| **Unit** | `api.test.js` | Mocks axios + cache. Asserts GET /api/user/:username: cache miss → REST + set cache; cache hit → no GitHub, no set. Error (404) → 500 + error body. |
-| **Integration** | `api.integration.test.js` | Real GitHub API, mocked cache. Runs `bootstrap()` in beforeAll. Asserts 200 + report shape for 4 usernames. Needs network + GITHUB_TOKEN in .env for rate limit. |
-| **Cache integration** | `api.cache.integration.test.js` | Real Redis, mocked GitHub. Runs `bootstrap()` when RUN_CACHE_TESTS=1. One test: cache miss then hit, no second GitHub call. Run with `npm run test:cache:integration`. |
+| **Unit** | `v1/api.test.js` | Mocks axios + cache. Asserts GET /api/user/:username: cache miss → REST + set cache; cache hit → no GitHub, no set. Error (404) → 500 + error body. |
+| **Integration** | `v1/api.integration.test.js` | Real GitHub API, mocked cache. Runs `bootstrap()` in beforeAll. Asserts 200 + report shape for 4 usernames. Needs network + GITHUB_TOKEN in .env for rate limit. |
+| **Cache integration** | `v1/api.cache.integration.test.js` | Real Redis, mocked GitHub. Runs `bootstrap()` when RUN_CACHE_TESTS=1. One test: cache miss then hit, no second GitHub call. Run with `npm run test:cache:integration`. |
 
 **Scripts:** `npm run test` (all), `npm run test:unit`, `npm run test:integration`, `npm run test:cache:integration`, `npm run test:v2`.
 
-## v2 suites (broader cases)
+## v2 suites (`tests/v2/`)
 
 | Suite | File | What it does |
 |-------|------|---------------|
