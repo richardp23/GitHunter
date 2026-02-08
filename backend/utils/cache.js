@@ -5,19 +5,31 @@ const REPORT_TTL = parseInt(process.env.REPORT_CACHE_TTL || "3600", 10); // 1 ho
 
 let client = null;
 
+let hasThrownRedisError = false;
+
 function getClient() {
   if (!client) {
     client = new Redis(REDIS_URL, {
       retryStrategy: (times) => {
-        if (times >= 3) return null; // Stop after 3 retries
+        if (times >= 3) {
+          if (!hasThrownRedisError) {
+            hasThrownRedisError = true;
+            // Only throw/log error once after giving up
+            console.error("Redis connection failed after 3 retries (using REST fallback)");
+          }
+          return null;
+        }
         return 1000; // Retry every second
       },
       maxRetriesPerRequest: 3,
     });
 
     client.on("error", (err) => {
-      // Log the error, but do not throw, so the app continues operating
-      console.error("Redis error (using REST fallback):", err.message || err);
+      // Log the error only on first failure after retries
+      if (!hasThrownRedisError) {
+        hasThrownRedisError = true;
+        console.error("Redis error (using REST fallback):", err.message || err);
+      }
     });
   }
   return client;
