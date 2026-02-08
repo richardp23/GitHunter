@@ -31,6 +31,11 @@
   						<input type="text" id="username" name="username" placeholder="Enter a GitHub username..." autocomplete="username" required>
   						<button type="submit" onclick="sendToBackend(event)">Search</button>
 					</form>
+					<div id="analyzing-status" class="analyzing-status hidden">
+						<span id="analyzing-text">Running AI analysis…</span>
+						<span id="analyzing-progress"></span>
+						<div class="analyzing-bar"><div id="analyzing-bar-fill" class="analyzing-bar-fill"></div></div>
+					</div>
 				</div>
 			</div>
 			<div id="stats">
@@ -67,8 +72,33 @@
     				</div>
 				</div>
 				<div class="stats-box" id="stats-box-3">
+					<span class="box-header">AI Score</span>
+					<div id="ai-score-value" class="ai-score-number">—</div>
+					<p id="ai-recommendation-short" class="ai-recommendation-short"></p>
+					<p id="ai-no-report" class="ai-no-report hidden">No AI report yet. Run analysis from the backend to see scores and recommendation.</p>
 				</div>
 				<div class="stats-box" id="stats-box-4">
+					<span class="box-header">Strengths &amp; Weaknesses</span>
+					<div id="strengths-weaknesses-wrap" class="sw-lists">
+						<div class="sw-col"><span class="sw-label">Strengths</span><ul id="strengths-list"></ul></div>
+						<div class="sw-col"><span class="sw-label">Weaknesses</span><ul id="weaknesses-list"></ul></div>
+					</div>
+					<p id="ai-no-sw" class="ai-no-report hidden">No AI report yet.</p>
+				</div>
+			</div>
+			<div id="ai-report-more" class="ai-report-more hidden">
+				<h3 class="ai-more-title">AI Report</h3>
+				<div class="ai-more-block">
+					<span class="ai-more-label">Hiring recommendation</span>
+					<p id="ai-recommendation-full"></p>
+				</div>
+				<div class="ai-more-block">
+					<span class="ai-more-label">Technical highlights</span>
+					<ul id="highlights-list"></ul>
+				</div>
+				<div class="ai-more-block">
+					<span class="ai-more-label">Improvement suggestions</span>
+					<ul id="suggestions-list"></ul>
 				</div>
 			</div>
         </div>

@@ -388,3 +388,141 @@ h2 {
     25% { transform: translateX(-5px); }
     75% { transform: translateX(5px); }
 }
+
+/* AI report card (box 3) */
+.ai-score-number {
+    font-size: 48px;
+    font-weight: 700;
+    color: #8b4df2;
+    margin: 10px 0;
+    font-family: 'Outfit', sans-serif;
+}
+.ai-score-number.no-ai { color: #666; }
+.ai-recommendation-short {
+    font-size: 14px;
+    color: #bbb;
+    line-height: 1.4;
+    padding: 0 15px;
+    margin: 0;
+    max-height: 80px;
+    overflow-y: auto;
+}
+.ai-no-report {
+    font-size: 13px;
+    color: #888;
+    padding: 0 15px;
+    margin: 10px 0;
+    text-align: center;
+}
+.hidden { display: none !important; }
+
+/* Strengths & weaknesses (box 4) */
+.sw-lists {
+    display: flex;
+    flex: 1;
+    width: 100%;
+    gap: 15px;
+    padding: 10px 15px;
+    min-height: 0;
+    overflow: hidden;
+}
+.sw-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+.sw-label {
+    font-size: 12px;
+    color: #8b4df2;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+.sw-col ul {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.5;
+    overflow-y: auto;
+}
+.sw-col ul li { margin-bottom: 4px; }
+
+/* AI report more section (below grid) */
+.ai-report-more {
+    width: 92%;
+    max-width: 1000px;
+    margin: 30px auto 60px;
+    padding: 24px;
+    background-color: #2e2e2e;
+    border: 2px solid #555;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    font-family: "Outfit", sans-serif;
+}
+.ai-more-title {
+    font-size: 22px;
+    font-weight: 400;
+    color: #fff;
+    margin: 0 0 20px 0;
+}
+.ai-more-block {
+    margin-bottom: 20px;
+}
+.ai-more-block:last-child { margin-bottom: 0; }
+.ai-more-label {
+    font-size: 12px;
+    color: #8b4df2;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: block;
+    margin-bottom: 8px;
+}
+.ai-more-block p,
+.ai-more-block ul {
+    margin: 0;
+    font-size: 15px;
+    color: #ccc;
+    line-height: 1.6;
+}
+.ai-more-block ul { padding-left: 20px; }
+.ai-more-block ul li { margin-bottom: 6px; }
+
+/* Analyzing state (AI analysis in progress) */
+.analyzing-status {
+    margin-top: 16px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, rgba(106, 17, 203, 0.2), rgba(37, 117, 252, 0.15));
+    border: 1px solid rgba(139, 77, 242, 0.4);
+    border-radius: 10px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.analyzing-status.hidden { display: none !important; }
+#analyzing-text {
+    display: block;
+    font-size: 15px;
+    color: #ccc;
+    margin-bottom: 6px;
+}
+#analyzing-progress {
+    display: block;
+    font-size: 13px;
+    color: #8b4df2;
+    margin-bottom: 10px;
+}
+.analyzing-bar {
+    height: 6px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.analyzing-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #6a11cb, #2575fc);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.4s ease;
+}

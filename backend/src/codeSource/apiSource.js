@@ -93,10 +93,8 @@ async function fetchRepoFiles(owner, repoName, branch = "HEAD") {
  * @returns {Promise<{ repos: Array<{ name: string, files: Array<{ path: string, content: string, language: string }> }>}>}
  */
 async function fetchFromApi(username, repos) {
-  const topRepos = (repos || [])
-    .filter((r) => !r.fork)
-    .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0))
-    .slice(0, 15);
+  // Preserve order from buildReport: pinned first, then stars/forks/activity
+  const topRepos = (repos || []).filter((r) => !r.fork).slice(0, 15);
 
   const results = [];
   for (const repo of topRepos) {

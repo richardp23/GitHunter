@@ -6,50 +6,77 @@ const { GEMINI_API_KEY } = require("../config/env");
 
 const GEMINI_MODEL = "gemini-3-flash-preview";
 
-const RUBRIC = `
-Scoring rubric (total 100%):
-- Code Quality: 30%
-- Project Complexity: 20%
-- Documentation: 15%
-- Consistency: 15%
-- Technical Breadth: 20%
+/** Chars of code per file in prompt (~20–25 lines). apiSource already caps at 150 lines/file. */
+const PREVIEW_CHAR_LIMIT = 800;
+/** Repos in prompt (order from backend: pinned, then stars/forks/activity). */
+const MAX_REPOS_IN_PROMPT = 12;
+/** Files per repo in prompt; match apiSource cap so we don't drop fetched files. */
+const MAX_FILES_IN_PROMPT_PER_REPO = 18;
+
+const SCORING_GUIDE = `
+You are a senior engineer producing a hiring-grade report. Evaluate fairly; weight the following categories as specified. Each category score is 0–100; overallScore should reflect the weighted mix.
+
+**Weights (must sum to 100%):**
+1. **Code Quality (30%)** – Readability, structure, error handling, naming. Prefer clear patterns over cleverness. Penalize obvious bugs or security issues in snippets.
+2. **Project Complexity (20%)** – Architecture, separation of concerns, use of tests/CI. Reward non-trivial projects and sensible tooling.
+3. **Documentation (15%)** – README, comments, setup instructions. Weight README and in-code clarity; missing docs hurt this score.
+4. **Consistency (15%)** – Style, formatting, and patterns across repos. Same stack and conventions across projects score higher.
+5. **Technical Breadth (20%)** – Languages, frameworks, and domains (e.g. full-stack, DevOps, tooling). Breadth without depth scores moderately; depth in one area can still score well.
+
+Output only valid JSON with the keys below. No markdown, no commentary outside the JSON.
 `;
 
 function buildPrompt(report, codeSamples, view) {
-  const reportSummary = JSON.stringify(
-    {
-      user: report?.user?.login || report?.user?.name,
-      repoCount: report?.repos?.length || 0,
-      stats: report?.stats,
-      topRepos: (report?.repos || [])
-        .filter((r) => !r.fork)
-        .slice(0, 10)
-        .map((r) => ({ name: r.name, language: r.language, stars: r.stargazers_count })),
-    },
-    null,
-    2
-  );
+  const stats = report?.stats || {};
+  const projectType = stats.project_type;
+  const descriptionsTrimmed = Array.isArray(projectType)
+    ? projectType
+        .filter((d) => d && typeof d === "string")
+        .slice(0, 6)
+        .map((d) => (d.length > 80 ? d.slice(0, 77) + "…" : d))
+    : [];
 
-  const codeSummary = (codeSamples?.repos || []).map((repo) => ({
+  const reportSummary = {
+    user: report?.user?.login || report?.user?.name,
+    repoCount: report?.repos?.length || 0,
+    language: stats.language || {},
+    stars: stats.stars,
+    forks: stats.fork_count,
+    commits: stats.commits,
+    pulls: stats.pulls,
+    projectDescriptions: descriptionsTrimmed,
+    topRepos: (report?.repos || [])
+      .filter((r) => !r.fork)
+      .slice(0, MAX_REPOS_IN_PROMPT)
+      .map((r) => ({ name: r.name, lang: r.language, stars: r.stargazers_count })),
+  };
+
+  const reposForPrompt = (codeSamples?.repos || []).slice(0, MAX_REPOS_IN_PROMPT);
+  const codeSummary = reposForPrompt.map((repo) => ({
     name: repo.name,
-    files: (repo.files || []).map((f) => ({ path: f.path, language: f.language, preview: (f.content || "").slice(0, 800) })),
+    files: (repo.files || [])
+      .slice(0, MAX_FILES_IN_PROMPT_PER_REPO)
+      .map((f) => ({
+        path: f.path,
+        lang: f.language,
+        preview: (f.content || "").slice(0, PREVIEW_CHAR_LIMIT),
+      })),
   }));
 
-  return `You are a senior engineer evaluating a candidate's GitHub profile for a hiring-grade report. View: ${view || "recruiter"}.
+  return `${SCORING_GUIDE}
+View: ${view || "recruiter"}.
 
-${RUBRIC}
+## Profile
+${JSON.stringify(reportSummary)}
 
-## GitHub profile summary
-${reportSummary}
+## Code samples
+${JSON.stringify(codeSummary)}
 
-## Code samples (path + language + preview)
-${JSON.stringify(codeSummary, null, 2)}
-
-Respond with a single JSON object only, no markdown or extra text, with these exact keys:
+Respond with a single JSON object only. No markdown or extra text. Exact keys:
 - "scores": { "overallScore": number 0-100, "categoryScores": { "codeQuality": number, "projectComplexity": number, "documentation": number, "consistency": number, "technicalBreadth": number } }
 - "strengthsWeaknesses": { "strengths": string[], "weaknesses": string[] }
-- "technicalHighlights": string[] (3-7 bullet-style highlights)
-- "improvementSuggestions": string[] (3-6 concrete suggestions)
+- "technicalHighlights": string[] (3-7 bullets)
+- "improvementSuggestions": string[] (3-6 concrete items)
 - "hiringRecommendation": string (one short paragraph: recommend yes/no/maybe and why)
 `;
 }
