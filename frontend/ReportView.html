@@ -34,7 +34,7 @@
 					<form id="name-form" class="stacked-form">
 						<div id="input-stack">
 							<input type="text" id="username" name="username" placeholder="Enter a GitHub username..." autocomplete="username" required>
-							<input type="text" id="job-description" placeholder="(Optional) Describe a job opening..." autocomplete="none">
+							<textarea id="job-description" placeholder="(Optional) Paste a job description to tune analysis weights..." autocomplete="none" rows="3"></textarea>
 						</div>
   						<button type="submit" onclick="sendToBackend(event)">Search</button>
 					</form>

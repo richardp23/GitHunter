@@ -38,9 +38,10 @@ router.post("/analyze", async (req, res) => {
     return res.status(400).json({ error: "username is required" });
   }
   const view = req.body?.view === "developer" ? "developer" : "recruiter";
+  const jobDescription = (req.body?.jobDescription || "").trim() || undefined;
 
   try {
-    const job = await analysisQueue.add({ username, view });
+    const job = await analysisQueue.add({ username, view, jobDescription });
     const jobId = String(job.id);
     await setJobStatus(jobId, { status: "queued", progress: 0 });
     return res.status(202).json({ jobId });

@@ -157,7 +157,8 @@ h2 {
 #job-description {
     font-family: "Roboto", sans-serif;
     margin-right: 10px;
-    height: 68px;
+    min-height: 68px;
+    resize: vertical;
     width: 300px;
     padding: 12px 20px;
     font-size: 16px;

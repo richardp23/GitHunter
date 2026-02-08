@@ -17,20 +17,28 @@ const README_CHAR_LIMIT = 1200;
 /** Recent commit messages per repo to include. */
 const COMMITS_IN_PROMPT = 5;
 
-const SCORING_GUIDE = `
+const SCORING_GUIDE_BASE = `
 You are a senior engineer producing a hiring-grade report. Evaluate fairly; weight the following categories as specified. Each category score is 0–100; overallScore should reflect the weighted mix.
 
-**Weights (must sum to 100%):**
+**Default weights (must sum to 100%):**
 1. **Code Quality (30%)** – Readability, structure, error handling, naming. Prefer clear patterns over cleverness. Penalize obvious bugs or security issues in snippets.
 2. **Project Complexity (20%)** – Architecture, separation of concerns, use of tests/CI. Reward non-trivial projects and sensible tooling.
 3. **Documentation (15%)** – README, comments, setup instructions. Weight README and in-code clarity; missing docs hurt this score.
 4. **Consistency (15%)** – Style, formatting, and patterns across repos. Same stack and conventions across projects score higher.
 5. **Technical Breadth (20%)** – Languages, frameworks, and domains (e.g. full-stack, DevOps, tooling). Breadth without depth scores moderately; depth in one area can still score well.
-
-Output only valid JSON with the keys below. No markdown, no commentary outside the JSON.
 `;
 
-function buildPrompt(report, codeSamples, view, enhancedRepos = []) {
+const JOB_DESCRIPTION_GUIDE = `
+**IMPORTANT – Job-specific weights:** A job description has been provided below. Use it to adjust the category weights so they align with the role's requirements. The weights must still sum to 100%. Examples:
+- Role emphasizes documentation or onboarding → increase Documentation weight, decrease others proportionally.
+- Senior/architect role → increase Project Complexity and Code Quality.
+- Full-stack or multi-language role → increase Technical Breadth.
+- Role stresses consistency, style guides, or team standards → increase Consistency.
+- Startup or fast iteration → Code Quality and Consistency may matter more.
+Tailor the weights to what the job listing prioritizes, then score accordingly. In hiringRecommendation, explicitly reference fit for this specific role.
+`;
+
+function buildPrompt(report, codeSamples, view, enhancedRepos = [], jobDescription = "") {
   const stats = report?.stats || {};
   const projectType = stats.project_type;
   const descriptionsTrimmed = Array.isArray(projectType)
@@ -86,7 +94,16 @@ ${JSON.stringify(overviewByRepo)}
 `
       : "";
 
-  return `${SCORING_GUIDE}
+  const jobSection =
+    jobDescription && jobDescription.trim()
+      ? `
+${JOB_DESCRIPTION_GUIDE}
+## Job description (use to tune weights and hiring recommendation)
+${jobDescription.trim().slice(0, 4000)}
+`
+      : "";
+
+  return `${SCORING_GUIDE_BASE}${jobSection}
 View: ${view || "recruiter"}.
 
 ## Profile
@@ -151,11 +168,12 @@ function normalizeOutput(parsed) {
  * @param {object} codeSamples - { repos: [{ name, files: [{ path, content, language }] }] }
  * @param {string} [view] - "recruiter" | "developer"
  * @param {Array<{ repo: string, readme: string, commits: object, pulls: object }>} [enhancedRepos] - from getOverview (README, commits, pulls per repo)
+ * @param {string} [jobDescription] - optional job listing text; when provided, adjusts weights to match role criteria
  * @returns {Promise<{ scores, strengthsWeaknesses, technicalHighlights, improvementSuggestions, hiringRecommendation }>}
  */
-async function analyze(report, codeSamples, view = "recruiter", enhancedRepos = []) {
+async function analyze(report, codeSamples, view = "recruiter", enhancedRepos = [], jobDescription = "") {
   const payload = report?.report ? report.report : report;
-  const prompt = buildPrompt(payload, codeSamples, view, enhancedRepos);
+  const prompt = buildPrompt(payload, codeSamples, view, enhancedRepos, jobDescription);
 
   if (!GEMINI_API_KEY) {
     return {

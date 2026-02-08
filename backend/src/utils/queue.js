@@ -21,12 +21,12 @@ const cleanupQueue = new Queue("slides-cleanup", REDIS_URL, {
 
 analysisQueue.process(async (job) => {
   const jobId = String(job.id);
-  const { username, view = "recruiter" } = job.data;
+  const { username, view = "recruiter", jobDescription } = job.data;
 
   await setJobStatus(jobId, { status: "processing", progress: 5 });
   await job.progress(5);
 
-  const result = await runAnalysis(username, view, { useClone: false });
+  const result = await runAnalysis(username, view, { useClone: false, jobDescription });
   await job.progress(85);
 
   // Use canonical login from GitHub API (report.user.login) for Redis key.

@@ -11,7 +11,7 @@ const aiService = require("./aiService");
  * Run full analysis: getOverview → fetchCodeSamples → aiService.analyze.
  * @param {string} username
  * @param {string} [view] - "recruiter" | "developer"
- * @param {{ useClone?: boolean }} [opts]
+ * @param {{ useClone?: boolean, jobDescription?: string }} [opts]
  * @returns {Promise<{ report: object, scores: object, strengthsWeaknesses: object, technicalHighlights: string[], improvementSuggestions: string[], hiringRecommendation: string }>}
  */
 async function runAnalysis(username, view = "recruiter", opts = {}) {
@@ -20,7 +20,7 @@ async function runAnalysis(username, view = "recruiter", opts = {}) {
   const reportPayload = base.report;
 
   const codeSamples = await fetchCodeSamples(username, reportPayload.repos || [], { useClone: opts.useClone || false });
-  const aiResult = await aiService.analyze(base, codeSamples, view, overview.enhancedRepos);
+  const aiResult = await aiService.analyze(base, codeSamples, view, overview.enhancedRepos, opts.jobDescription);
 
   return {
     report: reportPayload,
