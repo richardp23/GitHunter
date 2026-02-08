@@ -555,6 +555,36 @@ h2 {
 }
 .sw-col ul li { margin-bottom: 4px; }
 
+/* Download PDF button */
+.download-pdf-wrap {
+    width: 92%;
+    max-width: 1000px;
+    margin: 20px auto 0;
+    text-align: center;
+}
+.download-pdf-wrap.hidden { display: none; }
+.download-pdf-btn {
+    font-family: "Outfit", sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 12px 24px;
+    color: #fff;
+    background: linear-gradient(135deg, #6b21a8 0%, #7c3aed 100%);
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.download-pdf-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.5);
+}
+.download-pdf-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 /* AI report more section (below grid) */
 .ai-report-more {
     width: 92%;

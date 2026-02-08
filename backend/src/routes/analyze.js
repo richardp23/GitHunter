@@ -1,6 +1,7 @@
 const express = require("express");
 const { analysisQueue } = require("../utils/queue");
 const { getReportByJobId, getReportByUsername, getJobStatus, setJobStatus } = require("../utils/cache");
+const { createReportPdf, fillReportPdf } = require("../services/pdfService");
 
 const router = express.Router();
 
@@ -100,6 +101,64 @@ router.get("/report/:jobId", async (req, res) => {
     return res.status(404).json({ error: "Report not found" });
   }
   return res.json(report);
+});
+
+/**
+ * GET /api/download/latest/:username
+ * Returns PDF attachment of the latest full report for the given username.
+ * Define before /download/:jobId so "latest" is not captured as jobId.
+ */
+router.get("/download/latest/:username", async (req, res) => {
+  const username = (req.params.username || "").trim();
+  if (!username) return res.status(400).json({ error: "username is required" });
+
+  const report = await getReportByUsername(username);
+  if (!report) {
+    return res.status(404).json({ error: "No report found for this username. Run analysis first." });
+  }
+
+  const filename = `githunter-report-${username}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+  const doc = createReportPdf();
+  doc.pipe(res);
+  fillReportPdf(doc, report);
+  doc.end();
+});
+
+/**
+ * GET /api/download/:jobId
+ * Returns PDF attachment of the full report when job is completed.
+ */
+router.get("/download/:jobId", async (req, res) => {
+  const jobId = (req.params.jobId || "").trim();
+  if (!jobId) return res.status(400).json({ error: "jobId is required" });
+
+  const statusPayload = await getJobStatus(jobId);
+  if (!statusPayload) {
+    return res.status(404).json({ error: "Job not found or expired" });
+  }
+  if (statusPayload.status !== "completed") {
+    return res.status(202).json({ error: "Report not ready", status: statusPayload.status });
+  }
+
+  const report = await getReportByJobId(jobId);
+  if (!report) {
+    return res.status(404).json({ error: "Report not found" });
+  }
+
+  const username = report.report?.user?.login || report.report?.user?.name || "candidate";
+  const filename = `githunter-report-${username}.pdf`;
+
+  res.setHeader("Content-Type", "application/pdf");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+  const doc = createReportPdf();
+  doc.pipe(res);
+  fillReportPdf(doc, report);
+  doc.end();
 });
 
 module.exports = router;

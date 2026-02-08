@@ -1,6 +1,8 @@
 Chart.register(ChartDataLabels);
 let languageChart = null;
 let firstSearch = true;
+/** Set when a report is rendered; used by the Download PDF button. */
+let lastReportUsername = null;
 
 const API_BASE = "http://localhost:5000";
 const POLL_INTERVAL_MS = 2000;
@@ -8,6 +10,8 @@ const POLL_INTERVAL_MS = 2000;
 document.addEventListener("DOMContentLoaded", () => {
     const center = document.getElementById("center");
     setTimeout(() => center.classList.add("fade-in"), 100);
+    const downloadBtn = document.getElementById("download-pdf-btn");
+    if (downloadBtn) downloadBtn.addEventListener("click", downloadPdfReport);
 });
 
 function showAnalyzingState(show, progress = 0, text = "Running AI analysis…") {
@@ -88,6 +92,7 @@ function renderReport(data) {
     }
 
     const report = data.report || data;
+    lastReportUsername = report.user?.login || report.user?.name || null;
     avatarImg.src = report.user.avatar_url;
     displayName.innerText = report.user.name || report.user.login;
 
@@ -232,6 +237,37 @@ function renderReport(data) {
     const scrollHint = document.getElementById("scroll-indicator");
     if (document.documentElement.scrollHeight > window.innerHeight) scrollHint.classList.add("visible");
     else scrollHint.classList.remove("visible");
+
+    const downloadWrap = document.getElementById("download-pdf-wrap");
+    if (downloadWrap) {
+        downloadWrap.classList.remove("hidden");
+    }
+}
+
+async function downloadPdfReport() {
+    if (!lastReportUsername) return;
+    const btn = document.getElementById("download-pdf-btn");
+    if (btn) btn.disabled = true;
+    try {
+        const res = await fetch(`${API_BASE}/api/download/latest/${encodeURIComponent(lastReportUsername)}`);
+        if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            alert(err.error || "Could not download report.");
+            return;
+        }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `githunter-report-${lastReportUsername}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert("Download failed. Check the console.");
+        console.error(e);
+    } finally {
+        if (btn) btn.disabled = false;
+    }
 }
 
 async function sendToBackend(event) {
