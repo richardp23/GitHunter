@@ -19,7 +19,11 @@ app.use(cors({
   credentials: true
 }));
 
-app.listen(5000, () => { console.log("Server running on port 5000"); });
+if (require.main === module) {
+  app.listen(5000, () => { console.log("Server running on port 5000"); });
+}
+
+module.exports = app;
  
 app.get("/api/user/:username", async (req, res) => {
   const username = req.params.username;
@@ -71,44 +75,34 @@ app.get("/api/user/:username", async (req, res) => {
         totalSize += repo.size;
     });
 
-    /* fix this!
+    // Limit heavy API calls to top 15 repos (by stars, then recency) to avoid rate limits
+    const topRepos = [...repoData]
+      .filter(r => !r.fork)
+      .sort((a, b) => {
+        const starsDiff = (b.stargazers_count || 0) - (a.stargazers_count || 0);
+        if (starsDiff !== 0) return starsDiff;
+        return new Date(b.pushed_at || 0) - new Date(a.pushed_at || 0);
+      })
+      .slice(0, 15);
 
-    try {
-        let totalCommits = 0;
-        for (const repo of repoData) {
-            const commits = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/commits`);
-            totalCommits += commits.data.length;
-        }
-    } catch (err) {
-        res.status(404).json({ error: "Commits not found" });
-        totalCommits = totalCommits ?? 0;
-    }
-    
-    try {
-        let totalCommitComments = 0;
-        for (const repo of repoData) {
-            const commitComments = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/comments` );
-            totalCommitComments += commitComments.data.length;
-        }
-    } catch (err) {
-        res.status(404).json({ error: "Commit comments not found" });
-        totalCommitComments = totalCommitComments ?? 0;
-    }
+    let totalCommits = 0;
+    let totalPulls = 0;
 
-    try {
-        let totalPulls = 0;
-        for (const repo of repoData) {
-            const pulls = await githubApi.get(`https://api.github.com/repos/${username}/${repo.name}/pulls?state=all`);
-            totalPulls += pulls.data.length;
-        }
-    } catch (err) {
-        res.status(404).json({ error: "Pulls not found" });
-        totalPulls = totalPulls ?? 0;
-    }
-    
-    */
+    for (const repo of topRepos) {
+      const owner = repo.owner?.login || username;
+      const fullName = `${owner}/${repo.name}`;
 
-    //commit history, commits, commit comments, repo content, pull requests
+      try {
+        const [commitsRes, pullsRes] = await Promise.all([
+          githubApi.get(`https://api.github.com/repos/${fullName}/commits?per_page=30`),
+          githubApi.get(`https://api.github.com/repos/${fullName}/pulls?state=all&per_page=30`),
+        ]);
+        totalCommits += commitsRes.data.length;
+        totalPulls += pullsRes.data.length;
+      } catch {
+        // Skip this repo on 404/403; don't fail the whole request
+      }
+    }
 
     //Creates a user report that holds all the personal information about the user
     const userReport = {
@@ -122,11 +116,8 @@ app.get("/api/user/:username", async (req, res) => {
             repo_size: totalSize, 
             watchers: totalWatchers, 
             stars: totalStars,
-            /*
-            commits: totalCommits ?? 0, 
-            pulls: totalPulls ?? 0, 
-            commit_comments: totalCommitComments ?? 0
-            */
+            commits: totalCommits,
+            pulls: totalPulls,
         }
     };
 
