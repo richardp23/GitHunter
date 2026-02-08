@@ -134,7 +134,8 @@ app.get("/api/user/:username", async (req, res) => {
     res.json({report: userReport});
     
   } catch (err) {
-    res.status(404).json({ error: "User not found" });
+    console.error("Full Error Info:", err.response ? err.response.data : err.message);
+    res.status(500).json({ error: err.message });
   }
 
 });

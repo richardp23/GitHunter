@@ -28,6 +28,7 @@ build/
 # Testing
 coverage/
 .nyc_output/
+testdata.js
 
 # Misc
 .cache/

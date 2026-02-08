@@ -1,8 +1,10 @@
 <html>
 	<head>
 		<link rel="stylesheet" type="text/css" href="interface.css" />
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+		<script type="text/javascript" src="testData.js"></script>
 		<script type="text/javascript" src="script.js"> </script>
-		<script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
 		<meta charset="UTF-8">
 		<meta name="description" content="Find your match!">
 		<title> GitHunter </title>
@@ -28,11 +30,36 @@
 			</div>
 			<div id="stats">
 				<div class="stats-box" id="stats-box-1">
-					<span>Top Language</span>
-					<span id="top-language">Python</span>
-					<canvas id="language-chart"></canvas>
+					<span class="box-header">Top Language: <span id="language-header"></span></span>
+					<div id="chart-wrapper">
+						<canvas id="language-chart"></canvas>
+					</div>
 				</div>
 				<div class="stats-box" id="stats-box-2">
+					<span class="box-header">Quick Stats</span>
+	    			<div class="quick-grid-container">
+	        			<div class="mini-stat">
+            				<span class="mini-label">Repos</span>
+							<div class="icon-wrapper">
+								<img src="res/repo.png" id="repo-icon" class="stat-icon">
+								<span id="repo-stat" class="mini-value">0</span>
+							</div>
+        				</div>
+        				<div class="mini-stat">
+            				<span class="mini-label">Stars</span>
+							<div class="icon-wrapper">
+                				<img src="res/star.png" id="star-icon" class="stat-icon">
+                				<span id="star-stat" class="mini-value">0</span>
+            				</div>
+        				</div>
+        				<div class="mini-stat">
+            				<span class="mini-label">Forks</span>
+							<div class="icon-wrapper">
+								<img src="res/fork.png" id="fork-icon" class="stat-icon">
+            					<span id="fork-stat" class="mini-value">0</span>
+							</div>
+        				</div>
+    				</div>
 				</div>
 				<div class="stats-box" id="stats-box-3">
 				</div>

@@ -1,7 +1,9 @@
 body {
     background-color: #3a3a3a;
     font-family: "Roboto", sans-serif;
-    color: white
+    color: white;
+    margin: 0;
+    padding: 0;
 }
 
 h1 {
@@ -22,20 +24,23 @@ h2 {
 #logo {
     padding-right: 10px;
     padding-left: 10px;
-    height: 40px;
-    width: 40px;
+    height: 32px;
+    width: 32px;
 }
 
 #header {
     user-select: none; 
     position: fixed;
     margin-top: 0px;
-    font-size: 30px;
+    font-size: 24px;
     display: flex;
     align-items: center;
     width: 100%;
-    height: 60px;
+    height: 45px;
     font-weight: 300;
+    background-color: #555;
+    border-bottom: 1px solid #444;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 #center {
@@ -115,13 +120,13 @@ h2 {
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1441px) {
     #stats {
         grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (max-width: 800px) {
+@media (max-width: 900px) {
     #stats {
         grid-template-columns: 1fr;
     }
@@ -129,9 +134,91 @@ h2 {
 
 .stats-box {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
     align-items: center;
     flex-direction: column;
     font-family: "Outfit", sans-serif;
-    font-size: 24px;
+    overflow: hidden;
+}
+
+#chart-wrapper {
+    position: relative;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    padding: 20px;
+}
+
+#language-chart {
+    max-height: 100% !important; 
+    width: auto !important;
+}
+
+.box-header {
+    padding-top: 20px;
+    font-size: 28px;
+}
+
+.quick-grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 20px;
+}
+
+.mini-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    height: 100%;
+}
+
+.mini-stat:not(:last-child) {
+    border-right: 1px solid #555;
+}
+
+.mini-label {
+    font-size: 14px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+}
+
+.stat-icon {
+    position: absolute;
+    margin-top: 90px;
+    width: 120px; 
+    height: 120px;
+    opacity: 0.2; /* Makes the PNG transparent/subtle */
+    pointer-events: none; /* Ensures the icon doesn't block hover events on the chart/text */
+    z-index: 1;
+}
+
+#fork-icon {
+    width: 100px; 
+    height: 150px;
+}
+
+.mini-value {
+    position: relative;
+    margin-top: 90px;
+    z-index: 2; /* Keeps the text on top of the star */
+    font-size: 36px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+}
+.icon-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
 }
