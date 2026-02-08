@@ -91,7 +91,7 @@ h2 {
 }
 
 .results-state {
-    padding-top: 80px;
+    padding-top: 60px;
 }
 
 #search {
@@ -145,9 +145,17 @@ h2 {
     transition: 0.3s;
 }
 
+#name-form button:disabled {
+    background: #555; /* Solid dark grey */
+    color: #888;      /* Muted text color */
+    cursor: not-allowed;
+    box-shadow: none;  /* Remove the glow effect */
+    transform: none;   /* Prevent any hover lifting */
+}
+
 #center-form {
     background-color: #2e2e2e;
-    border: 2px solid #555;
+    border: 1px solid #555;
     border-radius: 15px;
     padding: 20px 30px;
     width: 400px;
@@ -180,7 +188,6 @@ h2 {
 
 #stats.grid-on {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
 }
 
 #stats.visible {
@@ -195,7 +202,7 @@ h2 {
     height: 400px;
     box-sizing: border-box;
     background-color: #2e2e2e;
-    border: 2px solid #555;
+    border: 1px solid #555;
     border-radius: 15px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
@@ -203,6 +210,35 @@ h2 {
 #stats > div.flipped {
     opacity: 1;
     transform: rotateY(0deg);
+}
+
+.stats-row-inner {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    max-height: 250px;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-row-left {
+    flex: 0 0 200px; /* Keeps the ring area fixed */
+    margin-left: 5px;
+    display: flex;
+    min-width: 240px;
+}
+
+.stats-row-right {
+    flex: 1; /* Text takes up the rest of the space */
+    border-left: 1px solid #444; /* Optional separator line */
+    padding-left: 10px;
+    height: 100%;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 /* Full-width row cards (Top Language, Quick Stats): span both columns */
@@ -309,17 +345,6 @@ h2 {
 @media (max-width: 900px) {
     #stats {
         grid-template-columns: 1fr;
-    }
-
-    .stats-box-fullrow .stats-row-inner {
-        flex-direction: column;
-    }
-
-    .stats-box-fullrow .stats-row-right {
-        border-left: none;
-        border-top: 1px solid #444;
-        padding-left: 0;
-        padding-top: 16px;
     }
 }
 
@@ -468,15 +493,16 @@ h2 {
     height: 64px;
     border-radius: 50%;
     border: none;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 255);
+    box-shadow: 0 0 7px rgba(255, 255, 255, 255);
 }
 
 #user-display-name {
+    font-family: "Outfit", sans-serif;
     font-size: clamp(24px, 4vw, 42px);
     white-space: nowrap; 
     overflow: hidden;
     text-overflow: ellipsis;
-    font-weight: 300;
+    font-weight: 600;
     color: white;
 }
 
@@ -493,12 +519,43 @@ h2 {
 }
 
 /* AI report card (box 3) */
+.progress-container {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 25px 0;
+    width: 200px; /* Match SVG width */
+    height: 200px; /* Match SVG height */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.progress-ring {
+    transform: rotate(-90deg); /* Start the ring at the top (12 o'clock) */
+}
+
+.progress-ring__circle {
+    /* Circumference = 2 * PI * R = 2 * 3.14 * 80 ≈ 502 */
+    stroke-dasharray: 503;
+    stroke-dashoffset: 503; /* Initially hidden */
+    transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.5s ease;
+}
+
 .ai-score-number {
-    font-size: 48px;
+    position: absolute; /* Place number inside the ring */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0 !important;
+    font-size: 70px;
     font-weight: 700;
-    color: #8b4df2;
+    color: #ffffff;
     margin: 10px 0;
     font-family: 'Outfit', sans-serif;
+    text-shadow: 0 0 10px currentColor;
 }
 .ai-score-number.no-ai { color: #666; }
 .ai-recommendation-short {
@@ -506,11 +563,13 @@ h2 {
     color: #bbb;
     line-height: 1.4;
     padding: 0 15px;
-    margin: 0;
-    max-height: 220px;
+    height: auto; 
+    display: block;
     overflow-y: auto;
-    flex: 1;
     min-height: 0;
+    text-align: left;
+    margin-top: 0px;
+    margin-bottom: 10px;
 }
 .ai-no-report {
     font-size: 13px;
@@ -522,38 +581,63 @@ h2 {
 .hidden { display: none !important; }
 
 /* Strengths & weaknesses (box 4) */
-.sw-lists {
-    display: flex;
-    flex: 1;
+#sw-grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Force exactly two equal columns */
+    align-items: start;
     width: 100%;
-    gap: 15px;
-    padding: 10px 15px;
-    min-height: 0;
-    overflow: hidden;
+    max-height: 300px;
+    padding: 20px 20px 20px;
+    gap: 0; /* We will use borders and padding for spacing */
+    box-sizing: border-box;
 }
-.sw-col {
-    flex: 1;
+
+.sw-grid-stat {
     display: flex;
     flex-direction: column;
-    min-width: 0;
-    overflow: hidden;
+    max-height: 300px;
+    
+    padding: 0 15px;
+    min-width: 0; /* Crucial: allows text to wrap instead of pushing width */
+
+    overflow-y: auto;
 }
+
+.sw-grid-stat:first-child {
+    border-right: 1px solid #555;
+}
+
 .sw-label {
-    font-size: 12px;
+    font-size: 14px;
     color: #8b4df2;
     text-transform: uppercase;
     letter-spacing: 1px;
-    margin-bottom: 6px;
+    margin-bottom: 12px;
+    font-weight: 600;
 }
-.sw-col ul {
+
+.sw-grid-list {
     margin: 0;
     padding-left: 18px;
     font-size: 13px;
     color: #ccc;
-    line-height: 1.5;
-    overflow-y: auto;
+    line-height: 1.6;
+    list-style-type: disc;
 }
-.sw-col ul li { margin-bottom: 4px; }
+
+.sw-grid-list li {
+    margin-bottom: 8px;
+}
+
+#strengths-list, #weaknesses-list {
+    margin: 0;
+    padding-left: 18px; /* Room for bullets */
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.5;
+    list-style-type: disc;
+    word-wrap: break-word; /* Force long words to wrap */
+}
 
 /* Download PDF button */
 .download-pdf-wrap {
@@ -592,7 +676,7 @@ h2 {
     margin: 30px auto 60px;
     padding: 24px;
     background-color: #2e2e2e;
-    border: 2px solid #555;
+    border: 1px solid #555;
     border-radius: 15px;
     box-shadow: 0 5px 15px rgba(0,0,0,0.3);
     font-family: "Outfit", sans-serif;
@@ -660,4 +744,62 @@ h2 {
     border-radius: 3px;
     width: 0%;
     transition: width 0.35s ease-out;
+}
+
+/* 1. Chrome, Safari, and newer Edge */
+.sw-grid-stat::-webkit-scrollbar,
+.ai-recommendation-short::-webkit-scrollbar {
+    width: 6px; /* Narrow width */
+}
+
+.sw-grid-stat::-webkit-scrollbar-track,
+.ai-recommendation-short::-webkit-scrollbar-track {
+    background: #2e2e2e; /* Matches box background */
+    border-radius: 10px;
+}
+
+.sw-grid-stat::-webkit-scrollbar-thumb,
+.ai-recommendation-short::-webkit-scrollbar-thumb {
+    background: #444; /* Slightly lighter so it's visible but subtle */
+    border-radius: 10px;
+    border: 1px solid #2e2e2e; /* Adds a "gap" effect */
+}
+
+.sw-grid-stat::-webkit-scrollbar-thumb:hover,
+.ai-recommendation-short::-webkit-scrollbar-thumb:hover {
+    background: #8b4df2; /* Purple accent on hover */
+}
+
+/* 2. Firefox Support */
+.sw-grid-stat,
+.ai-recommendation-short {
+    scrollbar-width: thin;
+    scrollbar-color: #444 #2e2e2e; /* thumb color | track color */
+}
+
+#tech-highlights-list, 
+#improvement-suggestions-list {
+    /* Resets the default ul behavior */
+    margin: 0;
+    padding: 20px 30px 20px 45px; /* Extra left padding for the bullets */
+    
+    /* Centering Logic */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centers items vertically in the box */
+    flex: 1; 
+    
+    /* Standard Bullets */
+    list-style-type: disc;
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.6;
+}
+
+#tech-highlights-list li, 
+#improvement-suggestions-list li {
+    margin-bottom: 12px;
+    display: list-item;
+    max-width: 100%;
+    margin-left: 10px;
 }
