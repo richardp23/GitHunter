@@ -645,9 +645,14 @@ h2 {
     max-width: 1000px;
     margin: 20px auto 0;
     text-align: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
 }
 .download-pdf-wrap.hidden { display: none; }
-.download-pdf-btn {
+.download-pdf-btn,
+.create-slides-btn {
     font-family: "Outfit", sans-serif;
     font-size: 16px;
     font-weight: 500;

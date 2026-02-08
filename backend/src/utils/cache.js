@@ -49,15 +49,21 @@ async function init() {
  * Skips Redis entirely when startup check failed; only uses try/catch for connection loss.
  */
 async function getReportByUsername(username) {
-  if (!redisAvailable) return null;
+  if (!redisAvailable) {
+    console.log("[Redis] getReportByUsername: Redis unavailable, skipping lookup for", username);
+    return null;
+  }
   const c = getClient();
   if (!c) return null;
   try {
     const key = `report:user:${username}`;
     const data = await c.get(key);
+    const found = !!data;
+    console.log("[Redis] getReportByUsername:", username, "key:", key, "found:", found);
     return data ? JSON.parse(data) : null;
   } catch (err) {
     redisAvailable = false;
+    console.error("[Redis] getReportByUsername error for", username, ":", err?.message);
     return null;
   }
 }
@@ -66,14 +72,19 @@ async function getReportByUsername(username) {
  * Cache report by username. No-op if Redis unavailable.
  */
 async function setReportByUsername(username, report) {
-  if (!redisAvailable) return;
+  if (!redisAvailable) {
+    console.log("[Redis] setReportByUsername: Redis unavailable, skipping save for", username);
+    return;
+  }
   const c = getClient();
   if (!c) return;
   try {
     const key = `report:user:${username}`;
     await c.setex(key, REPORT_CACHE_TTL, JSON.stringify(report));
+    console.log("[Redis] setReportByUsername: saved report for", username, "key:", key, "TTL:", REPORT_CACHE_TTL, "s");
   } catch (err) {
     redisAvailable = false;
+    console.error("[Redis] setReportByUsername error for", username, ":", err?.message);
   }
 }
 

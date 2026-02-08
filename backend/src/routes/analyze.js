@@ -114,6 +114,7 @@ router.get("/download/latest/:username", async (req, res) => {
 
   const report = await getReportByUsername(username);
   if (!report) {
+    console.log("[Download] PDF requested for", username, "- no report in Redis");
     return res.status(404).json({ error: "No report found for this username. Run analysis first." });
   }
 

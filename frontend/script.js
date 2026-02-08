@@ -35,6 +35,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const center = document.getElementById("center");
     setTimeout(() => center.classList.add("fade-in"), 100);
     const downloadBtn = document.getElementById("download-pdf-btn");
+    if (downloadBtn) downloadBtn.addEventListener("click", downloadPdfReport);
+    const createSlidesBtn = document.getElementById("create-slides-btn");
+    if (createSlidesBtn) createSlidesBtn.addEventListener("click", createSlidesPresentation);
 });
 
 function clearFakeLoadingIntervals() {
@@ -458,6 +461,40 @@ async function downloadPdfReport() {
         console.error(e);
     } finally {
         if (btn) btn.disabled = false;
+    }
+}
+
+async function createSlidesPresentation() {
+    if (!lastReportUsername) return;
+    const btn = document.getElementById("create-slides-btn");
+    if (btn) btn.disabled = true;
+    const originalText = btn ? btn.textContent : "";
+    if (btn) btn.textContent = "Creating…";
+    try {
+        const res = await fetch(`${API_BASE}/api/slides/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username: lastReportUsername }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            alert(data.error || "Could not create presentation.");
+            return;
+        }
+        const link = data.copyUrl || data.url;
+        if (link) {
+            window.open(link, "_blank", "noopener,noreferrer");
+        } else {
+            alert("No link returned.");
+        }
+    } catch (e) {
+        alert("Request failed. Check the console.");
+        console.error(e);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
     }
 }
 

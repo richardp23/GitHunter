@@ -1,0 +1,132 @@
+Challenge Development Setup & Helpful Links
+Challenge Development Setup & Helpful Links	1
+Challenge Overview	1
+Development Overview	2
+API Providers	2
+API Keys	2
+Designing a solution	2
+Dev Envr Setup	3
+Getting Started with the Javascript API	3
+Making LLM API Requests	3
+Why this matters (beyond “it doesn’t work”)	4
+Recommended approach–a backend proxy (the standard pattern)	4
+Note to Mac Users	4
+LLM Prompting	5
+What to focus on, what not to focus on	5
+Helpful Links	5
+Microsoft PowerPoint Links	6
+Troubleshooting	6
+
+This challenge incorporates today’s current LLM offerings into Microsoft’s PowerPoint tool. You are tasked with utilizing development tools provided by Microsoft for PowerPoint, using Typescript or Javascript.
+Challenge Overview
+Build a Microsoft PowerPoint add-in that lets users use AI to create and enhance slides inside PowerPoint. The add-in should support generating slide content from prompts, transforming rough notes into well-structured slides, and doing lightweight research that can be cited or summarized into slide-ready bullets. You can use any LLM provider. This only needs to run in a development environment.
+
+Baseline
+PowerPoint add-in UI (task pane) with prompt input + output preview
+Insert AI-generated content onto the current slide (title, bullets, speaker notes, images/diagrams optional)
+At least one “research” workflow (e.g., summarize a topic, compare options, generate pros/cons, provide sources)
+Stretch ideas (pick what’s cool)
+Template-driven generation: user creates bracketed variables + AI populates with real data
+“Make it consistent”: align terminology, tense, voice across a deck
+Multi-slide mode: generate an outline and create a 5–10 slide mini-deck
+Anything else you think would be cool!
+
+Development Overview
+API Providers
+You are welcome to choose any LLM provider to work with. Below is a list of today’s popular LLM choices:
+OpenAI (GPT-4x, GPT 5x, GPT 3.5)
+Anthropic (Claude Sonnet 3.5, 4.5)
+Gemini 
+Regardless of your model selection, interacting with a LLM boils down to the same mental model: 
+Input prompt → LLM → structured text output
+API Keys
+ToltIQ has provided temporary development API keys for OpenAI and Anthropic to support this hackathon. Please reach out to Steiner for access.
+These keys:
+Are for development and demo use only
+Provide access to current Anthropic and OpenAI models
+Will expire shortly after the hackathon ends
+Usage Guidelines
+These are shared keys across all participants
+Please avoid excessive or automated request spamming
+Be mindful of retries, loops, and unnecessary calls
+If something breaks due to overuse, everyone feels it 🙂
+
+
+Designing a solution
+Your solution will likely have two primary components:
+UX (HTML/CSS) 
+Visual components a user interacts with within your custom PowerPoint task pane
+JavaScript / Typescript 
+Local components to handle PowerPoint API interactions & LLM API calls 
+
+To start, set up your development environment and follow some of Microsoft’s provided PowerPoint add-in tutorials. While you do this, brainstorm some features you may want to build, for example:
+Summarize a topic and insert a slide
+Generate a slide of pros / cons 
+Provide high-level sources given a topic
+Fact check a selection of slides
+Generate a chart
+Apply a theme to every slide
+Remember: The goal here is to explore, broaden your skills, and get creative!
+Dev Envr Setup
+Microsoft provides 2 developer options for working with PowerPoint: 1) task-pane add-ons via a Javascript API and 2) content add-in’s via Visual Studio. For this challenge, the PowerPoint Javascript API is recommended for this challenge (option 1). Visual Studio requires a Windows development space, but could be incorporated for visual enhancements. 
+
+Tips: 
+Install formatting/linter extensions for Javascript/Typescript and HTML in your IDE
+Getting Started with the Javascript API
+Follow the steps listed in this Microsoft guide, from the “Prerequisites” section to the “Try It Out” section. This add-in tutorial goes a bit further in depth with how to work with the task pane resources as well. These guides will get you set up with a development environment and workflow.
+
+Microsoft also provides a basic tutorial guide that walks through calling basic PowerPoint operations via the JS API. 
+
+Otherwise, use the JS API Documentation provided to guide you while you develop.
+Making LLM API Requests
+Calling an LLM provider API directly from a PowerPoint add-in task pane is blocked by browser CORS policies and is a security risk for API keys. The recommended solution is to use a backend proxy service to forward requests securely; refer to the section titled Handling CORS for implementation details.
+
+Note to Mac Users
+⚠️ If you are developing on a Mac, I’d recommend the following set up:
+Download PowerPoint from Microsoft 365 NOT from the mac store
+In order to enable console/log viewability while testing your add-in, you must enable the com.microsoft.Powerpoint OfficeWebAddinDeveloperExtras variable, which is not supported by the Mac Store version of PowerPoint (aka it will be very hard to see log/console output if you use Mac store version)
+When using yo office to create your add-in template directory, select “Office Add-in Task Pane Project” instead of the unified manifest option. 
+The Microsoft 365 version of PowerPoint for Mac does not support unified-manifest add-ins. Your add-in must have a .xml extension to be supported and recognized by PowerPoint.
+To enable console/logging viewability when testing, follow the steps outlined here
+LLM Prompting
+LLMs behave much better when you tell them the slide format explicitly.
+
+For example: 
+
+Create content for a PowerPoint slide.
+
+Topic: Cloud Security Basics
+
+Return:
+- A short slide title (max 8 words)
+- 4–6 bullet points (1 line each, concise)
+- Optional speaker notes (2–3 sentences)
+
+Tone: professional, clear, non-marketing
+
+What to focus on, what not to focus on
+Prioritize:
+A user friendly UX
+Clear AI workflows 
+Usefulness when integrated into a PowerPoint workflow
+
+Don’t Stress About:
+Model fine-tuning
+Streaming tokens / token  tracking
+Vector databases
+Long-term LLM memory
+Perfect citations (a URL is good enough)
+Helpful Links
+
+Microsoft PowerPoint Links
+Build your first PowerPoint task pane add-in
+Tutorial: Create a PowerPoint task pane add-in
+Javascript API for PowerPoint
+Debug Microsoft Add-Ins On Mac
+
+
+Troubleshooting
+If your task-pane add in is not showing up:
+Note (these are from working on a mac)
+Run npx office-addin-dev-certs install, restart the dev server and Powerpoint, and run `npm start` again
+ Optionally, run npx office-addin-dev-certs uninstall first
