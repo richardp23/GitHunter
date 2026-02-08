@@ -10,6 +10,15 @@ jest.mock("axios", () => ({
   create: () => ({ get: (...args) => mockGet(...args) }),
 }));
 
+// Mock queue and cache so we don't need Redis
+jest.mock("./queue", () => ({
+  analysisQueue: { add: jest.fn(), getJob: jest.fn() },
+}));
+jest.mock("./utils/cache", () => ({
+  getReport: jest.fn(),
+  setReport: jest.fn(),
+}));
+
 const app = require("./index");
 
 const mockUser = {
