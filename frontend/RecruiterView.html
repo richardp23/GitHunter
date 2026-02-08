@@ -19,18 +19,24 @@
 			<img id="logo" src="res/logo.png" alt="Logo">
 			<span>GitHunter</span>
 		</div>
-		<div id="center">
-			<h1>Find your match</h1>
-			<h2><i>Enter a GitHub username to get a detailed report of their skills!</i></h2>
-			<div id="center-form">
-				<form id="name-form">
-  					<input type="text" id="username" name="username" placeholder="Enter a username..." required>
-  					<button type="button" onclick="sendToBackend(event)">Submit</button>
-				</form>
+		<div id="center" class="initial-state">
+			<div id="search">
+				<h1>Find your match</h1>
+				<h2><i>Enter a GitHub username to get a detailed report of their skills!</i></h2>
+				<div id="center-form">
+					<div id="profile-card">
+    					<img id="user-avatar" src="" alt="Profile Picture">
+    					<span id="user-display-name"></span>
+					</div>
+					<form id="name-form">
+  						<input type="text" id="username" name="username" placeholder="Enter a GitHub username..." autocomplete="username" required>
+  						<button type="submit" onclick="sendToBackend(event)">Search</button>
+					</form>
+				</div>
 			</div>
 			<div id="stats">
 				<div class="stats-box" id="stats-box-1">
-					<span class="box-header">Top Language: <span id="language-header"></span></span>
+					<span class="box-header">Top Language: <b><span id="language-header"></span></b></span>
 					<div id="chart-wrapper">
 						<canvas id="language-chart"></canvas>
 					</div>
@@ -67,5 +73,9 @@
 				</div>
 			</div>
         </div>
+		<div id="scroll-indicator" class="hidden">
+    		<span>Scroll for more info</span>
+    		<div class="arrow-down"></div>
+		</div>
 	</body>
 </html>
