@@ -7,7 +7,17 @@ let client = null;
 
 function getClient() {
   if (!client) {
-    client = new Redis(REDIS_URL);
+    client = new Redis(REDIS_URL, {
+      retryStrategy: (times) => {
+        if (times >= 3) return null; // Stop after 3 retries
+        return 1000; // Retry every second
+      },
+      maxRetriesPerRequest: 3,
+    });
+
+    client.on("error", (err) => {
+      throw new Error("Redis unavailable, falling back to REST.");
+    });
   }
   return client;
 }
