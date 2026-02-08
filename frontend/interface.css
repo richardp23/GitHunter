@@ -671,6 +671,7 @@ h2 {
 
 /* AI report more section (below grid) */
 .ai-report-more {
+    user-select: text; 
     width: 92%;
     max-width: 1000px;
     margin: 30px auto 60px;
@@ -802,4 +803,57 @@ h2 {
     display: list-item;
     max-width: 100%;
     margin-left: 10px;
+}
+
+#substats {
+    display: flex;
+    justify-content: center; /* Centers the whole group */
+    align-items: flex-start;
+    width: 100%;
+    padding: 9 0 10px 0;
+    gap: 40px; /* This is your fixed distance between each stat */
+    grid-column: 1 / -1; /* Ensures it spans the full width of the grid */
+}
+
+.mini-progress-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100px; /* Fixed width for each column to keep text aligned */
+    gap: 12px;    /* Fixed distance between ring and label */
+}
+
+.mini-progress-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.mini-ai-score-number {
+    position: absolute;
+    font-size: 22px; /* Smaller font for mini rings */
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    color: #fff;
+    filter: drop-shadow(0 0 2px currentColor);
+}
+
+.mini-ring-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #aaa;
+}
+.progress-ring__circle {
+    filter: drop-shadow(0 0 2px currentColor);
+}
+
+/* Circumference for R=34 is ~213.6 */
+.mini-progress-ring .progress-ring__circle {
+    stroke-dasharray: 213.6;
+    stroke-dashoffset: 213.6;
+    transition: stroke-dashoffset 1s ease, stroke 0.5s ease;
 }

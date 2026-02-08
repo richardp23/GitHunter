@@ -334,10 +334,36 @@ function renderReport(data) {
         if (quickstatsNoAi) quickstatsNoAi.classList.toggle("hidden", hasAiData);
         if (hasAiData) {
             console.log(data);
+
+            const categories = [
+                "codeQuality",
+                "projectComplexity",
+                "documentation",
+                "consistency",
+                "technicalBreadth"
+            ];
+            const miniCircumference = 213.6;
+            categories.forEach(key => {
+                const score = data.scores.categoryScores[key] ?? 0;
+                const ring = document.getElementById(`${key}-ring`);
+                const text = document.getElementById(`${key}-value`);
+                if (ring && text) {
+                    const offset = miniCircumference - (score / 100) * miniCircumference;
+                    const hue = Math.min(Math.max(score * 1.2, 0), 120);
+                    const color = `hsl(${hue}, 80%, 60%)`;
+
+                    ring.style.strokeDashoffset = offset;
+                    ring.style.stroke = color;
+                    text.style.color = color;
+            
+                    // Animate the number count-up
+                    animateValue(text, 0, score, 1000);
+                }
+            });
+            
             const score = data.scores.overallScore ?? 0;
             aiScoreEl.textContent = score;
             aiScoreEl.classList.remove("no-ai");
-            
             const ring = document.getElementById("ai-score-ring");
             const circumference = 502.6;
             const offset = circumference - (score / 100) * circumference;
@@ -448,6 +474,7 @@ async function sendToBackend(event) {
     showAnalyzingState(false);
 
     try {
+        usernameInput.value = "";
         // Use cached full report (including AI) when available, so we don't overwrite Redis with a new job
         const latestRes = await fetch(`${API_BASE}/api/report/latest/${encodeURIComponent(username)}`);
         if (latestRes.ok) {
