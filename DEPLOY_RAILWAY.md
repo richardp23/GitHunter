@@ -1,6 +1,6 @@
 # Deploy GitHunter to Railway
 
-This guide deploys the **backend** (Node/Express API) to Railway. The frontend can be served from the same app (optional) or hosted elsewhere and pointed at your Railway API URL.
+You can deploy **backend only** (API) or **backend + frontend** (one URL for the full app).
 
 ## Prerequisites
 
@@ -10,22 +10,30 @@ This guide deploys the **backend** (Node/Express API) to Railway. The frontend c
 
 ---
 
+## Choose deployment style
+
+| Style | Root Directory | Result |
+|-------|----------------|--------|
+| **Full stack (recommended)** | Leave blank or `/` | API + frontend. Open **ReportView** at `https://your-app.up.railway.app/ReportView.html` (or `/` → redirects there). |
+| **Backend only** | `backend` | API only. Use the frontend locally or elsewhere and set `window.API_BASE` to your Railway URL. |
+
+The steps below assume **full stack** so you can open the report view in the browser. For backend-only, set Root Directory to `backend` and skip the root-directory step.
+
+---
+
 ## 1. Create a new project and service
 
 1. Go to [railway.app](https://railway.app) and sign in.
 2. **New Project** → **Deploy from GitHub repo**.
 3. Select your **GitHunter** repository.
-4. Railway will create a service. **Do not deploy yet**—set the root directory first.
+4. Railway will create a service.
 
 ---
 
-## 2. Set root directory to `backend`
+## 2. Root directory (for full-stack: leave default)
 
-The app entry point and `package.json` live in the `backend/` folder.
-
-1. Open your **service** → **Settings**.
-2. Under **Source**, set **Root Directory** to: `backend`.
-3. Save. Railway will build and run from `backend/` (so `npm install` and `node index.js` run there).
+- **Full stack:** Leave **Root Directory** blank (or `/`). The repo-root `railway.toml` will build the backend, copy the frontend into `backend/public`, and serve both. You’ll access the app at `https://your-app.up.railway.app/ReportView.html` (or `/`).
+- **Backend only:** Set **Root Directory** to `backend`. Only the API is deployed; use the frontend elsewhere and point it at your Railway URL.
 
 ---
 
@@ -65,40 +73,40 @@ In your **backend service** → **Variables**, add the following. Copy from your
 ## 5. Deploy
 
 1. Commit and push any changes (or trigger a redeploy from the Railway dashboard).
-2. Railway will run `npm install` and then `npm start` (i.e. `node index.js`) from the `backend/` root.
-3. After the build finishes, open **Settings** → **Networking** → **Generate domain** to get a URL like `https://your-app.up.railway.app`.
-
-Visiting that URL should return `{ "ok": true, "service": "git-hunter-api" }` if the backend is running.
+2. **Full stack:** Railway runs the build from repo root (installs backend deps, copies `frontend/` → `backend/public/`), then starts with `cd backend && node index.js`.
+3. **Backend only:** Railway runs `npm install` and `npm start` from `backend/`.
+4. After the build finishes, open **Settings** → **Networking** → **Generate domain** to get a URL like `https://your-app.up.railway.app`.
 
 ---
 
-## 6. Use the API from the frontend
+## 6. Accessing the frontend (ReportView)
 
-- **Option A – Frontend elsewhere (e.g. local or Vercel/Netlify)**  
-  Point the frontend at your Railway API URL. In your HTML (before `script.js`), set:
+- **Full-stack deploy:**  
+  - **Report view:** `https://your-app.up.railway.app/ReportView.html`  
+  - **Enterprise dashboard:** `https://your-app.up.railway.app/EnterpriseView.html`  
+  - **Root:** `https://your-app.up.railway.app/` redirects to ReportView.  
+  The frontend uses the same origin for the API, so no extra config is needed.
+
+- **Backend-only deploy:**  
+  Open the HTML files locally (or host them on Vercel/Netlify). In each page, before `script.js`, set the API base:
   ```html
   <script>window.API_BASE = "https://your-app.up.railway.app";</script>
   ```
-  Or build the frontend with this value as a config / env (e.g. `VITE_API_URL` if using Vite).
-
-- **Option B – Serve frontend from the same Railway service**  
-  1. In your build (e.g. a custom build command or a deploy script), copy the repo’s `frontend/` contents into `backend/public/` (e.g. `cp -r ../frontend/* public/` or `xcopy /E /I ..\frontend public` on Windows).  
-  2. Set **Root Directory** to the repo root and use a **Custom Build Command** that installs backend deps and copies frontend into `backend/public`, then set **Start Command** to `cd backend && node index.js`.  
-  3. Or keep Root Directory as `backend` and add a **build step** that pulls the frontend from the parent directory (e.g. in `package.json`: `"build": "node -e \"require('fs').cpSync('../frontend', 'public', {recursive:true})\""` only if you configure the build context to include the parent).  
-  The simplest approach is to copy `frontend/` into `backend/public/` in your CI or locally before pushing, then deploy with Root Directory = `backend`. The app will serve `public/` at `/` and use the same origin for API calls.
 
 ---
 
-## 7. Optional: config as code
+## 7. Config as code
 
-A `backend/railway.toml` is included so the deploy uses a health check on `/`. If you use a custom config file path in Railway, point it to `backend/railway.toml`. With Root Directory set to `backend`, Railway will pick it up automatically.
+- **Full stack:** Repo-root `railway.toml` defines the build (install + copy frontend) and start command; Railway uses it when Root Directory is repo root.
+- **Backend only:** `backend/railway.toml` sets the health check on `/`. With Root Directory = `backend`, Railway uses it automatically.
 
 ---
 
 ## Troubleshooting
 
 - **Build fails**  
-  Ensure **Root Directory** is `backend` and that `backend/package.json` and `backend/index.js` exist.
+  - Full stack: ensure Root Directory is blank so repo-root `railway.toml` is used, and that `backend/` and `frontend/` exist.  
+  - Backend only: set Root Directory to `backend` and ensure `backend/package.json` and `backend/index.js` exist.
 
 - **App crashes or “Redis connection” errors**  
   Add the Redis add-on and set `REDIS_URL` in the backend service variables.

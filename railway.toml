@@ -1,0 +1,11 @@
+# Full-stack deploy: backend + frontend from repo root.
+# In Railway: leave Root Directory blank (or "/") so this file is used.
+# Frontend will be at https://your-app.up.railway.app/ReportView.html
+
+[build]
+buildCommand = "cd backend && npm install && cp -r ../frontend public"
+
+[deploy]
+startCommand = "cd backend && node index.js"
+healthcheckPath = "/"
+healthcheckTimeout = 30
