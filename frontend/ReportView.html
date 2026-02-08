@@ -31,8 +31,11 @@
     					<img id="user-avatar" src="" alt="Profile Picture">
     					<span id="user-display-name"></span>
 					</div>
-					<form id="name-form">
-  						<input type="text" id="username" name="username" placeholder="Enter a GitHub username..." autocomplete="username" required>
+					<form id="name-form" class="stacked-form">
+						<div id="input-stack">
+							<input type="text" id="username" name="username" placeholder="Enter a GitHub username..." autocomplete="username" required>
+							<input type="text" id="job-description" placeholder="(Optional) Describe a job opening..." autocomplete="none">
+						</div>
   						<button type="submit" onclick="sendToBackend(event)">Search</button>
 					</form>
 					<div id="analyzing-status" class="analyzing-status hidden">
