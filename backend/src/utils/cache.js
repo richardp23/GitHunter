@@ -154,6 +154,44 @@ async function getReportByJobId(jobId) {
   }
 }
 
+/** Key prefix and TTL for overview cache (READMEs, commits, pulls per repo). Separate from full report. */
+const OVERVIEW_KEY_PREFIX = "overview:user:";
+
+/**
+ * Get cached overview by username. Returns null if Redis unavailable or cache miss.
+ */
+async function getOverviewByUsername(username) {
+  if (!redisAvailable) return null;
+  const c = getClient();
+  if (!c) return null;
+  try {
+    const key = OVERVIEW_KEY_PREFIX + username;
+    const data = await c.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    redisAvailable = false;
+    console.error("[Redis] getOverviewByUsername error for", username, ":", err?.message);
+    return null;
+  }
+}
+
+/**
+ * Cache overview by username. No-op if Redis unavailable.
+ */
+async function setOverviewByUsername(username, overview) {
+  if (!redisAvailable) return;
+  const c = getClient();
+  if (!c) return;
+  try {
+    const key = OVERVIEW_KEY_PREFIX + username;
+    await c.setex(key, REPORT_CACHE_TTL, JSON.stringify(overview));
+    console.log("[Redis] setOverviewByUsername: saved overview for", username);
+  } catch (err) {
+    redisAvailable = false;
+    console.error("[Redis] setOverviewByUsername error for", username, ":", err?.message);
+  }
+}
+
 async function close() {
   if (client) {
     await client.quit();
@@ -170,6 +208,8 @@ module.exports = {
   init,
   getReportByUsername,
   setReportByUsername,
+  getOverviewByUsername,
+  setOverviewByUsername,
   setJobStatus,
   getJobStatus,
   setReportByJobId,

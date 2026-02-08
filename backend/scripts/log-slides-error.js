@@ -6,7 +6,7 @@
  */
 require("dotenv").config({ path: require("path").resolve(__dirname, "../.env") });
 const { getSlidesAuth } = require("../src/services/slidesService");
-const { SLIDES_DRIVE_FOLDER_ID, SLIDES_IMPERSONATE_EMAIL } = require("../src/config/env");
+const { SLIDES_DRIVE_FOLDER_ID, SLIDES_IMPERSONATE_EMAIL, GOOGLE_OAUTH_REFRESH_TOKEN } = require("../src/config/env");
 const { google } = require("googleapis");
 
 function logError(label, err) {
@@ -24,8 +24,36 @@ async function run() {
   const slidesApi = google.slides({ version: "v1", auth });
   const folderId = (SLIDES_DRIVE_FOLDER_ID || "").trim();
   const impersonate = (SLIDES_IMPERSONATE_EMAIL || "").trim();
+  const useOAuth = !!GOOGLE_OAUTH_REFRESH_TOKEN;
 
-  // Prefer impersonation test when set (files use that user's quota)
+  // OAuth: create as user (no Workspace needed)
+  if (useOAuth) {
+    console.log("OAuth refresh token is set. Creating presentation as that user ...\n");
+    const requestBody = {
+      name: "GitHunter log-slides-error test",
+      mimeType: "application/vnd.google-apps.presentation",
+    };
+    if (folderId) requestBody.parents = [folderId];
+    try {
+      const res = await drive.files.create({
+        requestBody,
+        supportsAllDrives: true,
+      });
+      const presentationId = res.data?.id;
+      if (!presentationId) throw new Error("No file ID returned");
+      console.log("   Success. Presentation ID:", presentationId);
+      await drive.files.delete({ fileId: presentationId, supportsAllDrives: true }).catch((e) => {
+        console.warn("   Cleanup delete failed:", e.message);
+      });
+      console.log("   Deleted. OAuth path works.\n");
+      return;
+    } catch (err) {
+      logError("Drive API (OAuth)", err);
+      process.exit(1);
+    }
+  }
+
+  // Impersonation (Workspace)
   if (impersonate) {
     console.log("SLIDES_IMPERSONATE_EMAIL is set. Creating presentation as that user (domain-wide delegation) ...\n");
     const requestBody = {

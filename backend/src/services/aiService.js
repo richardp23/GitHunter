@@ -12,6 +12,10 @@ const PREVIEW_CHAR_LIMIT = 800;
 const MAX_REPOS_IN_PROMPT = 12;
 /** Files per repo in prompt; match apiSource cap so we don't drop fetched files. */
 const MAX_FILES_IN_PROMPT_PER_REPO = 18;
+/** README chars per repo in prompt (for Documentation scoring). */
+const README_CHAR_LIMIT = 1200;
+/** Recent commit messages per repo to include. */
+const COMMITS_IN_PROMPT = 5;
 
 const SCORING_GUIDE = `
 You are a senior engineer producing a hiring-grade report. Evaluate fairly; weight the following categories as specified. Each category score is 0–100; overallScore should reflect the weighted mix.
@@ -26,7 +30,7 @@ You are a senior engineer producing a hiring-grade report. Evaluate fairly; weig
 Output only valid JSON with the keys below. No markdown, no commentary outside the JSON.
 `;
 
-function buildPrompt(report, codeSamples, view) {
+function buildPrompt(report, codeSamples, view, enhancedRepos = []) {
   const stats = report?.stats || {};
   const projectType = stats.project_type;
   const descriptionsTrimmed = Array.isArray(projectType)
@@ -63,12 +67,31 @@ function buildPrompt(report, codeSamples, view) {
       })),
   }));
 
+  const overviewByRepo = (enhancedRepos || [])
+    .slice(0, MAX_REPOS_IN_PROMPT)
+    .map((e) => ({
+      repo: e.repo,
+      readme: (e.readme || "").slice(0, README_CHAR_LIMIT),
+      commit_count: e.commits?.commit_count ?? 0,
+      recent_commits: (e.commits?.commits || []).slice(0, COMMITS_IN_PROMPT).map((c) => c.message),
+      pull_count: e.pulls?.pull_count ?? 0,
+      merged_count: e.pulls?.merged_count ?? 0,
+    }));
+
+  const overviewSection =
+    overviewByRepo.length > 0
+      ? `
+## Repo overview (README + activity)
+${JSON.stringify(overviewByRepo)}
+`
+      : "";
+
   return `${SCORING_GUIDE}
 View: ${view || "recruiter"}.
 
 ## Profile
 ${JSON.stringify(reportSummary)}
-
+${overviewSection}
 ## Code samples
 ${JSON.stringify(codeSummary)}
 
@@ -127,11 +150,12 @@ function normalizeOutput(parsed) {
  * @param {object} report - full report from buildReport (report.report = userReport)
  * @param {object} codeSamples - { repos: [{ name, files: [{ path, content, language }] }] }
  * @param {string} [view] - "recruiter" | "developer"
+ * @param {Array<{ repo: string, readme: string, commits: object, pulls: object }>} [enhancedRepos] - from getOverview (README, commits, pulls per repo)
  * @returns {Promise<{ scores, strengthsWeaknesses, technicalHighlights, improvementSuggestions, hiringRecommendation }>}
  */
-async function analyze(report, codeSamples, view = "recruiter") {
+async function analyze(report, codeSamples, view = "recruiter", enhancedRepos = []) {
   const payload = report?.report ? report.report : report;
-  const prompt = buildPrompt(payload, codeSamples, view);
+  const prompt = buildPrompt(payload, codeSamples, view, enhancedRepos);
 
   if (!GEMINI_API_KEY) {
     return {

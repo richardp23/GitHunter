@@ -10,6 +10,9 @@ const {
   SLIDES_TEMPLATE_ID,
   SLIDES_DRIVE_FOLDER_ID,
   SLIDES_IMPERSONATE_EMAIL,
+  GOOGLE_OAUTH_CLIENT_ID,
+  GOOGLE_OAUTH_CLIENT_SECRET,
+  GOOGLE_OAUTH_REFRESH_TOKEN,
 } = require("../config/env");
 const path = require("path");
 const fs = require("fs");
@@ -159,13 +162,29 @@ function getServiceAccountCredentials() {
 }
 
 /**
- * Get Google Auth client for Slides API (service account).
- * If SLIDES_IMPERSONATE_EMAIL is set, uses domain-wide delegation so files use that user's Drive quota.
+ * Get Google Auth client for Slides API.
+ * Priority: OAuth refresh token (user quota, no Workspace) → impersonation (Workspace) → service account.
  */
 function getSlidesAuth() {
-  const { GoogleAuth, JWT } = require("google-auth-library");
-  const subject = (SLIDES_IMPERSONATE_EMAIL || "").trim();
+  const { GoogleAuth, JWT, OAuth2Client } = require("google-auth-library");
 
+  // OAuth: use refresh token so files are created as that user (works with personal Gmail)
+  if (GOOGLE_OAUTH_CLIENT_ID && GOOGLE_OAUTH_CLIENT_SECRET && GOOGLE_OAUTH_REFRESH_TOKEN) {
+    const oauth2 = new OAuth2Client(
+      GOOGLE_OAUTH_CLIENT_ID,
+      GOOGLE_OAUTH_CLIENT_SECRET,
+      "urn:ietf:wg:oauth:2.0:oob"
+    );
+    oauth2.setCredentials({ refresh_token: GOOGLE_OAUTH_REFRESH_TOKEN });
+    return {
+      getClient: async () => {
+        await oauth2.getAccessToken();
+        return oauth2;
+      },
+    };
+  }
+
+  const subject = (SLIDES_IMPERSONATE_EMAIL || "").trim();
   if (subject) {
     const credentials = getServiceAccountCredentials();
     const jwt = new JWT({

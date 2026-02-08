@@ -1,9 +1,9 @@
 const { buildReport } = require("./githubService");
-const { getReportByUsername, setReportByUsername } = require("../utils/cache");
+const { getOverviewByUsername, setOverviewByUsername } = require("../utils/cache");
 const githubApi = require("./githubApi");
 
 async function getOverview(username) {
-  const cached = await getReportByUsername(username);
+  const cached = await getOverviewByUsername(username);
   if (cached) {
     console.log(`AI Overview: Cache hit for ${username}`);
     return cached;
@@ -62,7 +62,7 @@ async function getOverview(username) {
     enhancedRepos,
   };
 
-  await setReportByUsername(username, overview_result);
+  await setOverviewByUsername(username, overview_result);
   return overview_result;
 }
 
