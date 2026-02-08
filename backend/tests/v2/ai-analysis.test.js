@@ -45,6 +45,7 @@ describe("aiService", () => {
         consistency: 0,
         technicalBreadth: 0,
       });
+      expect(out).toHaveProperty("scoreBreakdown", "");
       expect(out).toHaveProperty("strengthsWeaknesses");
       expect(out.strengthsWeaknesses).toEqual({ strengths: [], weaknesses: [] });
       expect(out).toHaveProperty("technicalHighlights");
@@ -67,12 +68,14 @@ describe("aiService", () => {
           },
         },
         strengthsWeaknesses: { strengths: ["Clean code"], weaknesses: ["Few tests"] },
+        scoreBreakdown: "Strong code quality and breadth; documentation could improve.",
         technicalHighlights: ["Uses TypeScript"],
         improvementSuggestions: ["Add CI"],
         hiringRecommendation: "Recommend yes.",
       };
       const out = aiService.normalizeOutput(parsed);
       expect(out.scores.overallScore).toBe(85);
+      expect(out.scoreBreakdown).toBe("Strong code quality and breadth; documentation could improve.");
       expect(out.strengthsWeaknesses.strengths).toEqual(["Clean code"]);
       expect(out.technicalHighlights).toEqual(["Uses TypeScript"]);
       expect(out.improvementSuggestions).toEqual(["Add CI"]);
@@ -88,6 +91,7 @@ describe("aiService", () => {
 
       expect(result).toHaveProperty("scores");
       expect(result).toHaveProperty("strengthsWeaknesses");
+      expect(result).toHaveProperty("scoreBreakdown", "");
       expect(result).toHaveProperty("technicalHighlights");
       expect(result).toHaveProperty("improvementSuggestions");
       expect(result).toHaveProperty("hiringRecommendation");
@@ -114,6 +118,7 @@ describe("analysisService.runAnalysis", () => {
 
     expect(result).toHaveProperty("report", mockReport);
     expect(result).toHaveProperty("scores");
+    expect(result).toHaveProperty("scoreBreakdown");
     expect(result).toHaveProperty("strengthsWeaknesses");
     expect(result).toHaveProperty("technicalHighlights");
     expect(result).toHaveProperty("improvementSuggestions");

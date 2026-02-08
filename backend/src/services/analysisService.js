@@ -23,6 +23,7 @@ async function runAnalysis(username, view = "recruiter", opts = {}) {
   return {
     report: reportPayload,
     scores: aiResult.scores,
+    scoreBreakdown: aiResult.scoreBreakdown,
     strengthsWeaknesses: aiResult.strengthsWeaknesses,
     technicalHighlights: aiResult.technicalHighlights,
     improvementSuggestions: aiResult.improvementSuggestions,

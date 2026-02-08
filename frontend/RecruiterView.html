@@ -1,10 +1,11 @@
-<html>
+<html lang="en">
 	<head>
 		<link rel="stylesheet" type="text/css" href="interface.css" />
 		<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1"></script>
 		<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 		<script type="text/javascript" src="script.js"> </script>
 		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<meta name="description" content="Find your match!">
 		<title> GitHunter </title>
 		<link rel="shortcut icon" type="image/png" href="res/logo.png"/>
@@ -39,37 +40,60 @@
 				</div>
 			</div>
 			<div id="stats">
-				<div class="stats-box" id="stats-box-1">
+				<div class="stats-box stats-box-fullrow" id="stats-box-1">
 					<span class="box-header">Top Language: <b><span id="language-header"></span></b></span>
-					<div id="chart-wrapper">
-						<canvas id="language-chart"></canvas>
+					<div class="stats-row-inner">
+						<div class="stats-row-left">
+							<div id="chart-wrapper">
+								<canvas id="language-chart"></canvas>
+							</div>
+						</div>
+						<div class="stats-row-right">
+							<div class="card-extra-label">AI · Technical breadth</div>
+							<div id="technical-breadth-score" class="card-extra-value">—</div>
+							<div class="card-extra-sublabel">Languages, frameworks &amp; domains (0–100)</div>
+						</div>
 					</div>
 				</div>
-				<div class="stats-box" id="stats-box-2">
+				<div class="stats-box stats-box-fullrow" id="stats-box-2">
 					<span class="box-header">Quick Stats</span>
-	    			<div class="quick-grid-container">
-	        			<div class="mini-stat">
-            				<span class="mini-label">Repos</span>
-							<div class="icon-wrapper">
-								<img src="res/repo.png" id="repo-icon" class="stat-icon">
-								<span id="repo-stat" class="mini-value">0</span>
+					<div class="stats-row-inner">
+						<div class="stats-row-left">
+	    					<div class="quick-grid-container">
+	        					<div class="mini-stat">
+	            				<span class="mini-label">Repos</span>
+								<div class="icon-wrapper">
+									<img src="res/repo.png" id="repo-icon" class="stat-icon" alt="Repositories" title="Repositories">
+									<span id="repo-stat" class="mini-value">0</span>
+								</div>
+	        				</div>
+	        				<div class="mini-stat">
+	            				<span class="mini-label">Stars</span>
+								<div class="icon-wrapper">
+	                				<img src="res/star.png" id="star-icon" class="stat-icon" alt="Stars" title="Stars">
+	                				<span id="star-stat" class="mini-value">0</span>
+	            				</div>
+	        				</div>
+	        				<div class="mini-stat">
+	            				<span class="mini-label">Forks</span>
+								<div class="icon-wrapper">
+									<img src="res/fork.png" id="fork-icon" class="stat-icon" alt="Forks" title="Forks">
+	            					<span id="fork-stat" class="mini-value">0</span>
+								</div>
+	        				</div>
+	    				</div>
+						</div>
+						<div class="stats-row-right">
+							<div class="card-extra-label">AI · Project complexity</div>
+							<div id="project-complexity-score" class="card-extra-value">—</div>
+							<div class="card-extra-sublabel">Architecture, tests &amp; CI (0–100)</div>
+							<div class="card-extra-activity">
+								<span id="commits-stat" class="card-extra-stat">Commits (sampled): —</span>
+								<span id="pulls-stat" class="card-extra-stat">PRs: —</span>
 							</div>
-        				</div>
-        				<div class="mini-stat">
-            				<span class="mini-label">Stars</span>
-							<div class="icon-wrapper">
-                				<img src="res/star.png" id="star-icon" class="stat-icon">
-                				<span id="star-stat" class="mini-value">0</span>
-            				</div>
-        				</div>
-        				<div class="mini-stat">
-            				<span class="mini-label">Forks</span>
-							<div class="icon-wrapper">
-								<img src="res/fork.png" id="fork-icon" class="stat-icon">
-            					<span id="fork-stat" class="mini-value">0</span>
-							</div>
-        				</div>
-    				</div>
+							<p id="quickstats-no-ai" class="ai-no-report hidden">No AI report for scores.</p>
+						</div>
+					</div>
 				</div>
 				<div class="stats-box" id="stats-box-3">
 					<span class="box-header">AI Score</span>
@@ -87,7 +111,11 @@
 				</div>
 			</div>
 			<div id="ai-report-more" class="ai-report-more hidden">
-				<h3 class="ai-more-title">AI Report</h3>
+				<h3 class="ai-more-title">Summary</h3>
+				<div class="ai-more-block" id="score-breakdown-block">
+					<span class="ai-more-label">Score breakdown</span>
+					<p id="ai-score-breakdown"></p>
+				</div>
 				<div class="ai-more-block">
 					<span class="ai-more-label">Hiring recommendation</span>
 					<p id="ai-recommendation-full"></p>

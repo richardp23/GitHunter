@@ -1,6 +1,6 @@
 const express = require("express");
 const { buildReport } = require("../services/githubService");
-const { getReportByUsername, setReportByUsername } = require("../utils/cache");
+const { getReportByUsername } = require("../utils/cache");
 
 const router = express.Router();
 
@@ -20,7 +20,8 @@ router.get("/:username", async (req, res) => {
     }
 
     const result = await buildReport(username);
-    await setReportByUsername(username, result);
+    // Do not cache buildReport here — Redis cache is only written by the analysis job (full AI report).
+    // This avoids overwriting a full report with a non-AI report if cache expired.
     res.json(result);
   } catch (err) {
     console.error("Full Error Info:", err.response ? err.response.data : err.message);

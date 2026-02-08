@@ -1,4 +1,5 @@
 html, body {
+    -webkit-user-select: none;
     user-select: none; 
     background-color: #3a3a3a;
     font-family: "Roboto", sans-serif;
@@ -14,6 +15,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar {
 }
 
 h1 {
+    -webkit-user-select: none;
     user-select: none; 
     font-size: 120px;
     font-weight: 200;
@@ -21,6 +23,7 @@ h1 {
 }
 
 h2 {
+    -webkit-user-select: none;
     user-select: none; 
     font-weight: 300;
     font-size: 24px;
@@ -53,6 +56,7 @@ h2 {
 }
 
 #header {
+    -webkit-user-select: none;
     user-select: none; 
     position: fixed;
     margin-top: 0px;
@@ -120,6 +124,7 @@ h2 {
 }
 
 #name-form button {
+    -webkit-user-select: none;
     user-select: none; 
     padding: 12px 20px;
     font-size: 16px;
@@ -175,6 +180,7 @@ h2 {
 
 #stats.grid-on {
     display: grid;
+    grid-template-columns: repeat(2, 1fr);
 }
 
 #stats.visible {
@@ -199,6 +205,92 @@ h2 {
     transform: rotateY(0deg);
 }
 
+/* Full-width row cards (Top Language, Quick Stats): span both columns */
+.stats-box-fullrow {
+    grid-column: 1 / -1;
+}
+
+.stats-box-fullrow .stats-row-inner {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    width: 100%;
+    min-height: 0;
+    gap: 24px;
+    padding: 0 20px 20px;
+}
+
+.stats-box-fullrow .stats-row-left {
+    flex: 0 1 50%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stats-box-fullrow .stats-row-right {
+    flex: 0 1 50%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-left: 16px;
+    border-left: 1px solid #444;
+}
+
+.card-extra-label {
+    font-size: 12px;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.card-extra-label-mt {
+    margin-top: 1rem;
+}
+
+.card-extra-value {
+    font-size: 32px;
+    font-weight: 700;
+    font-family: "Outfit", sans-serif;
+    color: #7cff7c;
+}
+
+.card-extra-value.no-ai {
+    color: #888;
+}
+
+.card-extra-sublabel {
+    font-size: 13px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.card-extra-list {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #ccc;
+}
+
+.card-extra-list li {
+    margin-bottom: 4px;
+}
+
+.card-extra-activity {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 14px;
+    color: #bbb;
+}
+
+.card-extra-stat {
+    display: block;
+}
+
 .refresh-flip-360 {
     animation: box-flip-360 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -217,6 +309,17 @@ h2 {
 @media (max-width: 900px) {
     #stats {
         grid-template-columns: 1fr;
+    }
+
+    .stats-box-fullrow .stats-row-inner {
+        flex-direction: column;
+    }
+
+    .stats-box-fullrow .stats-row-right {
+        border-left: none;
+        border-top: 1px solid #444;
+        padding-left: 0;
+        padding-top: 16px;
     }
 }
 
@@ -404,8 +507,10 @@ h2 {
     line-height: 1.4;
     padding: 0 15px;
     margin: 0;
-    max-height: 80px;
+    max-height: 220px;
     overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 .ai-no-report {
     font-size: 13px;

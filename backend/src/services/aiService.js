@@ -74,10 +74,11 @@ ${JSON.stringify(codeSummary)}
 
 Respond with a single JSON object only. No markdown or extra text. Exact keys:
 - "scores": { "overallScore": number 0-100, "categoryScores": { "codeQuality": number, "projectComplexity": number, "documentation": number, "consistency": number, "technicalBreadth": number } }
+- "scoreBreakdown": string (2-4 sentences explaining why this overall score: which categories drove it up or down and a one-line summary)
 - "strengthsWeaknesses": { "strengths": string[], "weaknesses": string[] }
-- "technicalHighlights": string[] (3-7 bullets)
+- "technicalHighlights": string[] (4-8 concrete bullets: frameworks, patterns, notable repos, tech stack)
 - "improvementSuggestions": string[] (3-6 concrete items)
-- "hiringRecommendation": string (one short paragraph: recommend yes/no/maybe and why)
+- "hiringRecommendation": string (2-4 sentences: clear recommend yes/no/maybe, level if applicable, and why in 1-2 sentences)
 `;
 }
 
@@ -111,6 +112,7 @@ function normalizeOutput(parsed) {
         technicalBreadth: Number(parsed?.scores?.categoryScores?.technicalBreadth) || 0,
       },
     },
+    scoreBreakdown: typeof parsed?.scoreBreakdown === "string" ? parsed.scoreBreakdown.trim() : "",
     strengthsWeaknesses: {
       strengths: Array.isArray(parsed?.strengthsWeaknesses?.strengths) ? parsed.strengthsWeaknesses.strengths : [],
       weaknesses: Array.isArray(parsed?.strengthsWeaknesses?.weaknesses) ? parsed.strengthsWeaknesses.weaknesses : [],
@@ -134,6 +136,7 @@ async function analyze(report, codeSamples, view = "recruiter") {
   if (!GEMINI_API_KEY) {
     return {
       scores: { overallScore: 0, categoryScores: { codeQuality: 0, projectComplexity: 0, documentation: 0, consistency: 0, technicalBreadth: 0 } },
+      scoreBreakdown: "",
       strengthsWeaknesses: { strengths: [], weaknesses: [] },
       technicalHighlights: [],
       improvementSuggestions: [],

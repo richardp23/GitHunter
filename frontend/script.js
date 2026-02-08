@@ -146,6 +146,8 @@ function renderReport(data) {
     const totalRepos = report.user.public_repos;
     const totalStars = report.stats.stars;
     const totalForks = report.stats.fork_count;
+    const totalCommits = report.stats.commits != null ? report.stats.commits : null;
+    const totalPulls = report.stats.pulls != null ? report.stats.pulls : null;
     repoDisplay.innerText = totalRepos;
     starDisplay.innerText = totalStars;
     forkDisplay.innerText = totalForks;
@@ -164,24 +166,53 @@ function renderReport(data) {
     const strengthsList = document.getElementById("strengths-list");
     const weaknessesList = document.getElementById("weaknesses-list");
     const aiMoreSection = document.getElementById("ai-report-more");
+    const aiScoreBreakdownEl = document.getElementById("ai-score-breakdown");
+    const scoreBreakdownBlock = document.getElementById("score-breakdown-block");
     const aiRecFullEl = document.getElementById("ai-recommendation-full");
     const highlightsList = document.getElementById("highlights-list");
     const suggestionsList = document.getElementById("suggestions-list");
 
+    const technicalBreadthEl = document.getElementById("technical-breadth-score");
+    const projectComplexityEl = document.getElementById("project-complexity-score");
+    const commitsStatEl = document.getElementById("commits-stat");
+    const pullsStatEl = document.getElementById("pulls-stat");
+    const quickstatsNoAi = document.getElementById("quickstats-no-ai");
+
     [strengthsList, weaknessesList, highlightsList, suggestionsList].forEach((el) => { el.innerHTML = ""; });
 
     const hasAiData = data.scores != null;
+
+    if (technicalBreadthEl) {
+        const tb = hasAiData && data.scores.categoryScores && data.scores.categoryScores.technicalBreadth != null
+            ? data.scores.categoryScores.technicalBreadth
+            : null;
+        technicalBreadthEl.textContent = tb != null ? tb : "—";
+        technicalBreadthEl.classList.toggle("no-ai", tb == null);
+    }
+    if (projectComplexityEl) {
+        const pc = hasAiData && data.scores.categoryScores && data.scores.categoryScores.projectComplexity != null
+            ? data.scores.categoryScores.projectComplexity
+            : null;
+        projectComplexityEl.textContent = pc != null ? pc : "—";
+        projectComplexityEl.classList.toggle("no-ai", pc == null);
+    }
+    if (commitsStatEl) commitsStatEl.textContent = totalCommits != null ? `Commits (sampled): ${totalCommits}` : "Commits (sampled): —";
+    if (pullsStatEl) pullsStatEl.textContent = totalPulls != null ? `PRs: ${totalPulls}` : "PRs: —";
+    if (quickstatsNoAi) quickstatsNoAi.classList.toggle("hidden", hasAiData);
     if (hasAiData) {
         aiScoreEl.textContent = data.scores.overallScore ?? "—";
         aiScoreEl.classList.remove("no-ai");
         const rec = (data.hiringRecommendation || "").trim();
-        aiRecShortEl.textContent = rec ? rec.slice(0, 120) + (rec.length > 120 ? "…" : "") : "";
+        aiRecShortEl.textContent = rec || "";
         aiRecShortEl.classList.remove("hidden");
         aiNoReportEl.classList.add("hidden");
         aiNoSwEl.classList.add("hidden");
         (data.strengthsWeaknesses?.strengths || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; strengthsList.appendChild(li); });
         (data.strengthsWeaknesses?.weaknesses || []).forEach((w) => { const li = document.createElement("li"); li.textContent = w; weaknessesList.appendChild(li); });
         aiMoreSection.classList.remove("hidden");
+        const breakdown = (data.scoreBreakdown || "").trim();
+        if (aiScoreBreakdownEl) aiScoreBreakdownEl.textContent = breakdown || "";
+        if (scoreBreakdownBlock) scoreBreakdownBlock.style.display = breakdown ? "block" : "none";
         aiRecFullEl.textContent = rec || "";
         (data.technicalHighlights || []).forEach((h) => { const li = document.createElement("li"); li.textContent = h; highlightsList.appendChild(li); });
         (data.improvementSuggestions || []).forEach((s) => { const li = document.createElement("li"); li.textContent = s; suggestionsList.appendChild(li); });
@@ -193,6 +224,8 @@ function renderReport(data) {
         aiNoReportEl.classList.remove("hidden");
         aiNoSwEl.classList.remove("hidden");
         aiMoreSection.classList.add("hidden");
+        if (aiScoreBreakdownEl) aiScoreBreakdownEl.textContent = "";
+        if (scoreBreakdownBlock) scoreBreakdownBlock.style.display = "block";
         aiRecFullEl.textContent = "";
     }
 
@@ -214,6 +247,14 @@ async function sendToBackend(event) {
     showAnalyzingState(false);
 
     try {
+        // Use cached full report (including AI) when available, so we don't overwrite Redis with a new job
+        const latestRes = await fetch(`${API_BASE}/api/report/latest/${encodeURIComponent(username)}`);
+        if (latestRes.ok) {
+            const data = await latestRes.json();
+            renderReport(data);
+            return;
+        }
+
         const res = await fetch(`${API_BASE}/api/analyze`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
