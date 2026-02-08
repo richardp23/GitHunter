@@ -17,6 +17,7 @@
   "description": "",
   "dependencies": {
     "@google/genai": "^1.40.0",
+    "@supabase/supabase-js": "^2.95.3",
     "axios": "^1.13.4",
     "bull": "^4.16.5",
     "cors": "^2.8.6",

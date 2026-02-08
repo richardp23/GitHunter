@@ -3,6 +3,7 @@ const { REDIS_URL, SLIDES_CLEANUP_DELAY_MS } = require("../config/env");
 const { setReportByJobId, setReportByUsername, setJobStatus } = require("./cache");
 const { runAnalysis } = require("../services/analysisService");
 const { deletePresentation } = require("../services/slidesService");
+const { saveReport: archiveSaveReport } = require("../services/archiveService");
 
 const analysisQueue = new Queue("analysis", REDIS_URL, {
   defaultJobOptions: {
@@ -38,6 +39,7 @@ analysisQueue.process(async (job) => {
 
   await setReportByJobId(jobId, result);
   await setReportByUsername(canonicalUsername, result);
+  await archiveSaveReport(canonicalUsername, result);
   await setJobStatus(jobId, { status: "completed", progress: 100 });
   await job.progress(100);
 

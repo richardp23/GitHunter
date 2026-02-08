@@ -25,6 +25,15 @@ const GOOGLE_OAUTH_REFRESH_TOKEN = (process.env.GOOGLE_OAUTH_REFRESH_TOKEN || ""
 /** Delay in ms before deleting our copy of the generated deck (user gets copy link). Default 5 min. */
 const SLIDES_CLEANUP_DELAY_MS = parseInt(process.env.SLIDES_CLEANUP_DELAY_MS || "300000", 10);
 
+/** Supabase (long-term archive for reports). Optional; app runs without it. */
+const SUPABASE_URL = (process.env.SUPABASE_URL || "").trim();
+/** New secret key (sb_secret_...); preferred over legacy service_role. See https://github.com/orgs/supabase/discussions/29260 */
+const SUPABASE_SECRET_KEY = (process.env.SUPABASE_SECRET_KEY || "").trim();
+/** Legacy service_role JWT; still supported but prefer SUPABASE_SECRET_KEY for new projects. */
+const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").trim();
+/** Key used by the app: new secret key if set, otherwise legacy service_role. */
+const SUPABASE_KEY = SUPABASE_SECRET_KEY || SUPABASE_SERVICE_ROLE_KEY;
+
 module.exports = {
   REDIS_URL,
   REPORT_CACHE_TTL,
@@ -40,4 +49,8 @@ module.exports = {
   GOOGLE_OAUTH_CLIENT_SECRET,
   GOOGLE_OAUTH_REFRESH_TOKEN,
   SLIDES_CLEANUP_DELAY_MS,
+  SUPABASE_URL,
+  SUPABASE_KEY,
+  SUPABASE_SECRET_KEY,
+  SUPABASE_SERVICE_ROLE_KEY,
 };

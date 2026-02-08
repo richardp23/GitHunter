@@ -1,0 +1,33 @@
+<html lang="en">
+	<head>
+		<link rel="stylesheet" type="text/css" href="interface.css" />
+		<script type="text/javascript" src="script.js"></script>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<meta name="description" content="GitHunter Enterprise - Archived reports">
+		<title>GitHunter Enterprise</title>
+		<link rel="shortcut icon" type="image/png" href="res/logo.png"/>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&family=Roboto:ital,wght@0,100..900;1,100..900&family=SN+Pro:ital,wght@0,200..900;1,200..900&display=swap" rel="stylesheet">
+	</head>
+	<body>
+		<div id="header">
+			<a href="ReportView.html" id="header-logo-link" aria-label="GitHunter home">
+				<img id="logo" src="res/logo.png" alt="Logo">
+				<span>GitHunter</span>
+			</a>
+			<a href="ReportView.html" class="header-nav-btn">Search</a>
+		</div>
+		<div id="center" class="initial-state">
+			<div id="search">
+				<h1>Archived reports</h1>
+				<h2><i>Click a card to open the report</i></h2>
+			</div>
+			<p id="enterprise-loading">Loading…</p>
+			<p id="enterprise-empty" class="hidden">No archived reports yet. Run analyses to see them here.</p>
+			<div id="enterprise-cards-container"></div>
+		</div>
+	</body>
+</html>

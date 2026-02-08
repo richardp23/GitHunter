@@ -1,4 +1,6 @@
-Chart.register(ChartDataLabels);
+if (typeof Chart !== "undefined" && typeof ChartDataLabels !== "undefined") {
+    Chart.register(ChartDataLabels);
+}
 let languageChart = null;
 let firstSearch = true;
 
@@ -33,12 +35,112 @@ const FAKE_LOADING_MESSAGES = [
 
 document.addEventListener("DOMContentLoaded", () => {
     const center = document.getElementById("center");
-    setTimeout(() => center.classList.add("fade-in"), 100);
+    const enterpriseContainer = document.getElementById("enterprise-cards-container");
+
+    if (enterpriseContainer) {
+        initEnterprisePortal(enterpriseContainer);
+        if (center) setTimeout(() => center.classList.add("fade-in"), 100);
+        return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const usernameFromUrl = params.get("username");
+    if (usernameFromUrl && document.getElementById("stats")) {
+        loadReportByUsernameFromUrl(usernameFromUrl);
+    }
+
+    setTimeout(() => center && center.classList.add("fade-in"), 100);
     const downloadBtn = document.getElementById("download-pdf-btn");
     if (downloadBtn) downloadBtn.addEventListener("click", downloadPdfReport);
     const createSlidesBtn = document.getElementById("create-slides-btn");
     if (createSlidesBtn) createSlidesBtn.addEventListener("click", createSlidesPresentation);
 });
+
+/** Load and render report when opening ReportView with ?username= (e.g. from enterprise portal). */
+async function loadReportByUsernameFromUrl(username) {
+    try {
+        const res = await fetch(`${API_BASE}/api/report/latest/${encodeURIComponent(username)}`);
+        if (res.ok) {
+            const data = await res.json();
+            renderReport(data);
+        } else {
+            const err = await res.json().catch(() => ({}));
+            const search = document.getElementById("search");
+            if (search) {
+                const subtitle = search.querySelector("h2");
+                if (subtitle) subtitle.textContent = err.error || "Report not found.";
+            }
+        }
+    } catch (e) {
+        console.error(e);
+        const search = document.getElementById("search");
+        if (search && search.querySelector("h2")) search.querySelector("h2").textContent = "Failed to load report.";
+    }
+}
+
+/** Enterprise portal: load list, render cards, ensure + navigate on click. */
+async function initEnterprisePortal(container) {
+    const loadingEl = document.getElementById("enterprise-loading");
+    const emptyEl = document.getElementById("enterprise-empty");
+
+    if (loadingEl) loadingEl.classList.remove("hidden");
+    if (emptyEl) emptyEl.classList.add("hidden");
+    container.innerHTML = "";
+
+    try {
+        const res = await fetch(`${API_BASE}/api/enterprise/list`);
+        const list = res.ok ? await res.json() : [];
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (!list || list.length === 0) {
+            if (emptyEl) emptyEl.classList.remove("hidden");
+            return;
+        }
+        if (emptyEl) emptyEl.classList.add("hidden");
+        list.forEach((entry) => {
+            const card = document.createElement("div");
+            card.className = "enterprise-card";
+            card.dataset.username = entry.username;
+            const img = document.createElement("img");
+            img.className = "enterprise-card-avatar";
+            img.src = entry.avatar_url || "res/logo.png";
+            img.alt = entry.username;
+            img.loading = "lazy";
+            const nameEl = document.createElement("span");
+            nameEl.className = "enterprise-card-username";
+            nameEl.textContent = entry.username;
+            const scoreEl = document.createElement("span");
+            scoreEl.className = "enterprise-card-score";
+            scoreEl.textContent = entry.score != null ? String(entry.score) : "—";
+            card.appendChild(img);
+            card.appendChild(nameEl);
+            card.appendChild(scoreEl);
+            card.addEventListener("click", async () => {
+                card.classList.add("enterprise-card-loading");
+                try {
+                    const ensureRes = await fetch(`${API_BASE}/api/enterprise/ensure/${encodeURIComponent(entry.username)}`);
+                    if (ensureRes.ok) {
+                        window.location.href = `ReportView.html?username=${encodeURIComponent(entry.username)}`;
+                    } else {
+                        const err = await ensureRes.json().catch(() => ({}));
+                        alert(err.error || "Report not found.");
+                    }
+                } catch (e) {
+                    alert("Failed to load report.");
+                } finally {
+                    card.classList.remove("enterprise-card-loading");
+                }
+            });
+            container.appendChild(card);
+        });
+    } catch (e) {
+        console.error(e);
+        if (loadingEl) loadingEl.classList.add("hidden");
+        if (emptyEl) {
+            emptyEl.textContent = "Failed to load list.";
+            emptyEl.classList.remove("hidden");
+        }
+    }
+}
 
 function clearFakeLoadingIntervals() {
     if (fakeProgressIntervalId != null) {
