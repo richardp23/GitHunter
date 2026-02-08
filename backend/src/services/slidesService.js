@@ -176,12 +176,7 @@ function getSlidesAuth() {
       "urn:ietf:wg:oauth:2.0:oob"
     );
     oauth2.setCredentials({ refresh_token: GOOGLE_OAUTH_REFRESH_TOKEN });
-    return {
-      getClient: async () => {
-        await oauth2.getAccessToken();
-        return oauth2;
-      },
-    };
+    return oauth2;
   }
 
   const subject = (SLIDES_IMPERSONATE_EMAIL || "").trim();
@@ -294,6 +289,37 @@ function getPlaceholderIds(page) {
 }
 
 /**
+ * Get current text content of a shape by objectId. Slides API rejects deleteText when text is empty.
+ * @param {object} pres - Presentation data from presentations.get
+ * @param {string} objectId - Shape objectId
+ * @returns {string}
+ */
+function getShapeText(pres, objectId) {
+  for (const slide of pres.slides || []) {
+    for (const el of slide.pageElements || []) {
+      if (el.objectId !== objectId) continue;
+      const elements = el.shape?.text?.textElements || [];
+      return elements
+        .filter((e) => e.textRun?.content)
+        .map((e) => e.textRun.content)
+        .join("");
+    }
+  }
+  return "";
+}
+
+/** Build deleteText + insertText requests, skipping deleteText when placeholder is empty (API rejects startIndex 0 endIndex 0). */
+function textUpdateRequests(pres, objectId, text) {
+  const current = getShapeText(pres, objectId);
+  const reqs = [];
+  if (current.length > 0) {
+    reqs.push({ deleteText: { objectId, textRange: { type: "ALL" } } });
+  }
+  reqs.push({ insertText: { objectId, insertionIndex: 0, text: text || "" } });
+  return reqs;
+}
+
+/**
  * Create a Google Slides presentation from structured content.
  * If SLIDES_TEMPLATE_ID is set, clones that Drive file then fills; otherwise creates blank + predefined layouts.
  * @param {{ title: string, slides: Array<{ title: string, bullets: string[], speakerNotes?: string }> }} content
@@ -342,15 +368,15 @@ async function createPresentationFromContent(content) {
   const firstSlideContent = slides[0];
   if (firstPlaceholders.titleId && firstSlideContent) {
     requests.push(
-      { deleteText: { objectId: firstPlaceholders.titleId, textRange: { type: "ALL" } } },
-      { insertText: { objectId: firstPlaceholders.titleId, insertionIndex: 0, text: firstSlideContent.title || title } }
+      ...textUpdateRequests(
+        pres,
+        firstPlaceholders.titleId,
+        firstSlideContent.title || title
+      )
     );
     if (firstPlaceholders.subtitleId) {
       const subText = firstSlideContent.bullets && firstSlideContent.bullets[0] ? firstSlideContent.bullets[0] : "";
-      requests.push(
-        { deleteText: { objectId: firstPlaceholders.subtitleId, textRange: { type: "ALL" } } },
-        { insertText: { objectId: firstPlaceholders.subtitleId, insertionIndex: 0, text: subText } }
-      );
+      requests.push(...textUpdateRequests(pres, firstPlaceholders.subtitleId, subText));
     }
   }
 
@@ -381,16 +407,12 @@ async function createPresentationFromContent(content) {
     if (!slideContent) continue;
     if (placeholders.titleId) {
       textRequests.push(
-        { deleteText: { objectId: placeholders.titleId, textRange: { type: "ALL" } } },
-        { insertText: { objectId: placeholders.titleId, insertionIndex: 0, text: slideContent.title || "" } }
+        ...textUpdateRequests(pres, placeholders.titleId, slideContent.title || "")
       );
     }
     if (placeholders.bodyId && slideContent.bullets && slideContent.bullets.length > 0) {
       const bodyText = slideContent.bullets.map((b) => `• ${b}`).join("\n");
-      textRequests.push(
-        { deleteText: { objectId: placeholders.bodyId, textRange: { type: "ALL" } } },
-        { insertText: { objectId: placeholders.bodyId, insertionIndex: 0, text: bodyText } }
-      );
+      textRequests.push(...textUpdateRequests(pres, placeholders.bodyId, bodyText));
     }
   }
 

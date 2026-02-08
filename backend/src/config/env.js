@@ -34,6 +34,14 @@ const SUPABASE_SERVICE_ROLE_KEY = (process.env.SUPABASE_SERVICE_ROLE_KEY || "").
 /** Key used by the app: new secret key if set, otherwise legacy service_role. */
 const SUPABASE_KEY = SUPABASE_SECRET_KEY || SUPABASE_SERVICE_ROLE_KEY;
 
+/** True if Google Slides API is configured (service account or OAuth). */
+const isSlidesConfigured = () =>
+  !!(
+    GOOGLE_APPLICATION_CREDENTIALS ||
+    GOOGLE_SERVICE_ACCOUNT_JSON ||
+    (GOOGLE_OAUTH_CLIENT_ID && GOOGLE_OAUTH_CLIENT_SECRET && GOOGLE_OAUTH_REFRESH_TOKEN)
+  );
+
 module.exports = {
   REDIS_URL,
   REPORT_CACHE_TTL,
@@ -53,4 +61,5 @@ module.exports = {
   SUPABASE_KEY,
   SUPABASE_SECRET_KEY,
   SUPABASE_SERVICE_ROLE_KEY,
+  isSlidesConfigured,
 };
