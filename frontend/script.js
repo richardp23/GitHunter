@@ -9,9 +9,6 @@ async function sendToBackend(event) {
     const res = await fetch(`http://localhost:5000/api/user/${username}`); 
     const data = await res.json(); 
 
-    // TEST DATA THIS IS ONLY ME DONT PUSH TO MAIN
-    // const data = testData;
-
     console.log(data);
 
     // Languages used display
@@ -97,7 +94,6 @@ async function sendToBackend(event) {
         }
     });
 
-    // change data to testData to test without API
     const totalRepos = data.report.user.public_repos;
     const totalStars = data.report.stats.stars;
     const totalForks = data.report.stats.fork_count;

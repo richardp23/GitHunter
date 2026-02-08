@@ -1,3 +1,9 @@
+/**
+ * GitHunter Backend - Express API server
+ * Provides sync and async endpoints for GitHub profile analysis.
+ * Requires: Redis (for queue + cache), GITHUB_TOKEN in .env (optional but recommended)
+ */
+
 require("dotenv").config();
 
 const express = require("express");
@@ -8,20 +14,32 @@ const { getReport } = require("./utils/cache");
 
 const app = express();
 
+// Parse JSON request bodies (needed for POST /api/analyze)
 app.use(express.json());
+
+// Allow cross-origin requests from any origin (e.g. frontend on different port)
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "OPTIONS"],
   credentials: true
 }));
 
+// Only start HTTP server when this file is run directly (not when required by tests)
 if (require.main === module) {
   app.listen(5000, () => { console.log("Server running on port 5000"); });
 }
 
 module.exports = app;
 
-// --- Sync route (kept for backward compatibility) ---
+// -----------------------------------------------------------------------------
+// SYNC ROUTE - Fetches GitHub data immediately and returns (kept for backward compatibility)
+// -----------------------------------------------------------------------------
+
+/**
+ * GET /api/user/:username
+ * Fetches GitHub profile + repos + stats in a single request. Blocks until complete.
+ * Use this for quick lookups or when you don't need the async queue flow.
+ */
 app.get("/api/user/:username", async (req, res) => {
   const username = req.params.username;
   console.log(`Request received for user: ${username}`);
@@ -35,8 +53,17 @@ app.get("/api/user/:username", async (req, res) => {
   }
 });
 
-// --- Async job queue routes ---
+// -----------------------------------------------------------------------------
+// ASYNC JOB QUEUE ROUTES - Uses Bull + Redis for long-running analysis
+// Flow: POST /api/analyze -> poll GET /api/status/:jobId -> GET /api/report/:jobId
+// -----------------------------------------------------------------------------
 
+/**
+ * POST /api/analyze
+ * Body: { username: string }
+ * Creates a background job to fetch GitHub data. Returns jobId immediately.
+ * Client should poll GET /api/status/:jobId until status is "complete", then fetch report.
+ */
 app.post("/api/analyze", async (req, res) => {
   const username = req.body?.username;
   if (!username || typeof username !== "string") {
@@ -52,6 +79,11 @@ app.post("/api/analyze", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/status/:jobId
+ * Returns job status and progress. If complete, includes the cached report.
+ * Status values: "pending" | "processing" | "complete" | "failed"
+ */
 app.get("/api/status/:jobId", async (req, res) => {
   const { jobId } = req.params;
   if (!jobId) return res.status(400).json({ error: "jobId is required" });
@@ -91,6 +123,11 @@ app.get("/api/status/:jobId", async (req, res) => {
   }
 });
 
+/**
+ * GET /api/report/:jobId
+ * Returns the cached report for a completed job. Reports expire after REPORT_CACHE_TTL (default 1 hour).
+ * Returns 202 if job is still processing; 404 if job not found or report expired.
+ */
 app.get("/api/report/:jobId", async (req, res) => {
   const { jobId } = req.params;
   if (!jobId) return res.status(400).json({ error: "jobId is required" });
