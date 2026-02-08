@@ -28,8 +28,16 @@ analysisQueue.process(async (job) => {
   const result = await runAnalysis(username, view, { useClone: false });
   await job.progress(85);
 
+  // Use canonical login from GitHub API (report.user.login) for Redis key.
+  // Frontend uses this for PDF download; Redis keys are case-sensitive, so "Brianmf7" vs "brianmf7" would miss.
+  const canonicalUsername = result.report?.user?.login || username;
+  if (canonicalUsername !== username) {
+    console.log("[Analysis] Job", jobId, "username mismatch: input", username, "-> canonical", canonicalUsername);
+  }
+  console.log("[Analysis] Job", jobId, "saving report to Redis for", canonicalUsername);
+
   await setReportByJobId(jobId, result);
-  await setReportByUsername(username, result);
+  await setReportByUsername(canonicalUsername, result);
   await setJobStatus(jobId, { status: "completed", progress: 100 });
   await job.progress(100);
 
