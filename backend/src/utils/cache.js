@@ -77,6 +77,72 @@ async function setReportByUsername(username, report) {
   }
 }
 
+const JOB_STATUS_TTL = 86400; // 24h for job status/report
+
+/**
+ * Set job status. { status: 'queued'|'processing'|'completed'|'failed', progress?: 0-100 }
+ */
+async function setJobStatus(jobId, statusPayload) {
+  if (!redisAvailable) return;
+  const c = getClient();
+  if (!c) return;
+  try {
+    const key = `report:job:${jobId}:status`;
+    await c.setex(key, JOB_STATUS_TTL, JSON.stringify(statusPayload));
+  } catch (err) {
+    redisAvailable = false;
+  }
+}
+
+/**
+ * Get job status. Returns null if miss or Redis unavailable.
+ */
+async function getJobStatus(jobId) {
+  if (!redisAvailable) return null;
+  const c = getClient();
+  if (!c) return null;
+  try {
+    const key = `report:job:${jobId}:status`;
+    const data = await c.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    redisAvailable = false;
+    return null;
+  }
+}
+
+/**
+ * Cache full report by jobId (when analysis completed).
+ */
+async function setReportByJobId(jobId, report) {
+  if (!redisAvailable) return;
+  const c = getClient();
+  if (!c) return;
+  try {
+    const key = `report:job:${jobId}`;
+    await c.setex(key, REPORT_CACHE_TTL, JSON.stringify(report));
+  } catch (err) {
+    redisAvailable = false;
+  }
+}
+
+/**
+ * Get cached report by jobId. Returns null if miss or Redis unavailable.
+ */
+async function getReportByJobId(jobId) {
+  if (!redisAvailable) return null;
+  const c = getClient();
+  if (!c) return null;
+  try {
+    const key = `report:job:${jobId}`;
+    const data = await c.get(key);
+    return data ? JSON.parse(data) : null;
+  } catch (err) {
+    redisAvailable = false;
+    return null;
+  }
+}
+
 async function close() {
   if (client) {
     await client.quit();
@@ -93,6 +159,10 @@ module.exports = {
   init,
   getReportByUsername,
   setReportByUsername,
+  setJobStatus,
+  getJobStatus,
+  setReportByJobId,
+  getReportByJobId,
   getClient,
   close,
   isRedisAvailable,
